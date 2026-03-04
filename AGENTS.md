@@ -230,6 +230,32 @@ All cache operations inside `wrap()` are guarded with try/except. If any cache o
 
 ---
 
+## Addendum 2 — Round 2 Review Resolutions
+
+The following decisions were made during the second round of plan review and are binding for implementation. Where they modify Round 1 decisions, that is noted.
+
+### Sync/Async Storage Interface (R2-1)
+
+The `StorageBackend` ABC defines **sync abstract methods** (`store`, `search`, `invalidate_namespace`) as the primary interface. Async variants (`astore`, `asearch`, `ainvalidate_namespace`) have default implementations via `run_in_executor`. Backends override async methods for native async I/O. Sync wrapper calls sync methods directly; async wrapper calls async methods directly. No `asyncio.run()` bridging. `MemoryStorage` overrides async methods to call sync directly (no thread pool — no I/O). `RedisStorage` accepts both `redis.Redis` and `redis.asyncio.Redis` clients and overrides both method sets.
+
+### Bucket Pre-filtering Dropped (R2-2)
+
+**Supersedes Round 1, Issue 1, section 1b.** The "top-4 dims × 8 bins" LSH-style bucket key is mathematically unsound for dense normalized embeddings. It causes silent false negatives. Both backends use brute-force cosine similarity over all entries in the namespace filtered by `embedding_model_id`. For in-memory, this is numpy vectorized. For Redis, this means client-side computation (see next section).
+
+### Redis Data Transfer — Documented Limitation (R2-3)
+
+**Extends Round 1, Issue 1, section 1a.** Redis backend fetches all embeddings per namespace for client-side cosine similarity. This is practical for ≤5,000 entries per namespace. Server-side computation (Lua scripts, RediSearch) is deferred to a future version. A `namespace_size()` method and a structlog warning at a configurable threshold (default: 5,000) are added. Embeddings are fetched via pipeline (`MGET`), not individual calls.
+
+### Redis Namespace SET Tombstone Cleanup (R2-4)
+
+Lazy cleanup during `search()` and `invalidate_namespace()`. When an ID in the namespace SET points to an expired hash, it is removed from the SET in the same pipeline. No separate cleanup job or background task. Cleanup is logged via structlog at debug level.
+
+### CacheEntry Includes prompt_text (R2-5)
+
+`CacheEntry` gains a required `prompt_text: str` field storing the original prompt. Used for debugging and future re-embedding when switching models. Not used in similarity search or cache key construction. Documentation notes the privacy implication of storing plaintext prompts.
+
+---
+
 ## Known Risks — Handle These Correctly
 
 ### Context sensitivity
