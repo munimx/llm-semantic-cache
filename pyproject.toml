@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "llm-semantic-cache"
+version = "0.1.0"
+description = "Semantic caching for OpenAI-compatible LLM APIs"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "numpy>=1.26",
+    "fastembed>=0.3",
+    "structlog>=24.0",
+    "prometheus-client>=0.20",
+]
+
+[project.optional-dependencies]
+torch = ["sentence-transformers>=3.0"]
+redis = ["redis[asyncio]>=5.0", "fakeredis[aioredis]>=2.23"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "fakeredis[aioredis]>=2.23",
+    "mypy>=1.9",
+    "ruff>=0.4",
+    "coverage>=7.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
