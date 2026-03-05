@@ -49,6 +49,6 @@ def hash_context(context: dict[str, Any]) -> str:
         sort_keys=True,
         separators=(",", ":"),
         default=_canonical_default,
-        ensure_ascii=False,
+        ensure_ascii=True,
     )
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()

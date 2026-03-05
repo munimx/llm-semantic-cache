@@ -59,4 +59,6 @@ def test_nested_dict_is_handled() -> None:
 
 
 def test_unicode_values_work() -> None:
-    assert hash_context({"emoji": "✅", "text": "café"})
+    assert hash_context({"emoji": "✅", "text": "café"}) == hash_context(
+        {"text": "café", "emoji": "✅"}
+    )
