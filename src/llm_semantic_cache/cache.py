@@ -21,6 +21,7 @@ from llm_semantic_cache.metrics import (
     record_miss,
     record_stream_bypass,
 )
+from llm_semantic_cache.prompt import extract_prompt_text
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 log = structlog.get_logger(__name__)
