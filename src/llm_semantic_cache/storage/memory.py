@@ -1,7 +1,8 @@
-"""InMemoryStorage — dict-based storage with brute-force cosine similarity search."""
+"""InMemoryStorage — dict-based storage with numpy-vectorized similarity search."""
 from __future__ import annotations
 
-from llm_semantic_cache.similarity import cosine_similarity
+import numpy as np
+
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 
@@ -17,6 +18,7 @@ class InMemoryStorage(StorageBackend):
     """
 
     def __init__(self) -> None:
+        # namespace -> list of CacheEntry (live entries only)
         self._store: dict[str, list[CacheEntry]] = {}
 
     def store(self, entry: CacheEntry) -> None:
@@ -33,28 +35,50 @@ class InMemoryStorage(StorageBackend):
         context_hash: str,
         threshold: float,
     ) -> CacheEntry | None:
-        """Find the best matching entry using brute-force cosine similarity.
+        """Find the best matching entry using numpy-vectorized cosine similarity.
 
         Filters candidates by namespace, embedding_model_id, context_hash,
-        and non-expiry before computing similarity.
+        and non-expiry. Expired entries are evicted from the store during search.
+        Uses a single matrix dot product for all similarity computations.
+        Assumes embeddings are L2-normalized unit vectors.
         """
-        candidates = self._store.get(namespace, [])
-        best_entry: CacheEntry | None = None
-        best_score = -1.0
+        all_entries = self._store.get(namespace, [])
+        if not all_entries:
+            return None
 
-        for entry in candidates:
-            if entry.embedding_model_id != embedding_model_id:
-                continue
-            if entry.context_hash != context_hash:
-                continue
+        # Separate live from expired; write back only live entries (eviction).
+        live: list[CacheEntry] = []
+        expired: list[CacheEntry] = []
+        for entry in all_entries:
             if entry.is_expired():
-                continue
-            score = cosine_similarity(embedding, entry.embedding)
-            if score >= threshold and score > best_score:
-                best_score = score
-                best_entry = entry
+                expired.append(entry)
+            else:
+                live.append(entry)
 
-        return best_entry
+        if expired:
+            self._store[namespace] = live
+
+        # Filter by model_id and context_hash.
+        candidates = [
+            e
+            for e in live
+            if e.embedding_model_id == embedding_model_id and e.context_hash == context_hash
+        ]
+        if not candidates:
+            return None
+
+        # Vectorized cosine similarity: all embeddings are already L2-normalized,
+        # so dot product equals cosine similarity.
+        query = np.array(embedding, dtype=np.float64)
+        matrix = np.array([e.embedding for e in candidates], dtype=np.float64)
+        scores = matrix @ query  # shape: (n_candidates,)
+
+        best_idx = int(np.argmax(scores))
+        best_score = float(scores[best_idx])
+
+        if best_score >= threshold:
+            return candidates[best_idx]
+        return None
 
     def invalidate_namespace(self, namespace: str) -> int:
         """Delete all entries in a namespace. Returns count of deleted entries."""
@@ -66,5 +90,5 @@ class InMemoryStorage(StorageBackend):
         self._store.clear()
 
     def namespace_size(self, namespace: str) -> int:
-        """Return the number of entries in a namespace (for monitoring)."""
-        return len(self._store.get(namespace, []))
+        """Return the count of live (non-expired) entries in a namespace."""
+        return sum(1 for e in self._store.get(namespace, []) if not e.is_expired())
