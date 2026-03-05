@@ -1,5 +1,7 @@
 import time
+from unittest.mock import patch
 
+import pytest
 from llm_semantic_cache.storage.memory import InMemoryStorage
 from tests.conftest import make_entry
 
@@ -133,3 +135,13 @@ def test_embedding_model_id_filtering(memory_storage: InMemoryStorage) -> None:
     result = memory_storage.search([1.0, 0.0, 0.0], "ns", "model-b", "ctx", 0.9)
     assert result is not None
     assert result.embedding_model_id == "model-b"
+
+
+@pytest.mark.asyncio
+async def test_async_methods_do_not_use_thread_pool(memory_storage: InMemoryStorage) -> None:
+    entry = make_entry(embedding=[1.0, 0.0, 0.0], namespace="ns", context_hash="ctx")
+    with patch("asyncio.to_thread") as to_thread:
+        await memory_storage.astore(entry)
+        result = await memory_storage.asearch([1.0, 0.0, 0.0], "ns", "test-model", "ctx", 0.9)
+    assert result is not None
+    to_thread.assert_not_called()
