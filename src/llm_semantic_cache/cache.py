@@ -20,7 +20,6 @@ from llm_semantic_cache.metrics import (
     record_miss,
     record_stream_bypass,
 )
-from llm_semantic_cache.prompt import extract_prompt_text
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 log = structlog.get_logger(__name__)
@@ -272,14 +271,17 @@ class SemanticCache:
             log.error("cache.store_failed", error=str(exc))
 
     def _extract_prompt(self, messages: Any) -> str | None:
-        """Extract prompt text from model or dict messages."""
-        try:
-            return extract_prompt_text(messages)
-        except Exception:
-            pass
-        if not isinstance(messages, list):
+        """Extract prompt text from OpenAI-style messages."""
+        if not isinstance(messages, list) or not messages:
             return None
         for message in reversed(messages):
+            if hasattr(message, "role") and hasattr(message, "content"):
+                if message.role != "user":
+                    continue
+                content = message.content
+                if isinstance(content, str) and content.strip():
+                    return content.strip()
+                return None
             if not isinstance(message, dict):
                 continue
             if message.get("role") != "user":
