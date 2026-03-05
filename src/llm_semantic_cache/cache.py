@@ -79,11 +79,25 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Async cache execution path with fail-open and timeout."""
-        namespace, context_hash, prompt_text = self._extract_cache_params(kwargs)
+        if "cache_context" not in kwargs:
+            raise ValueError(
+                "cache_context is required when calling a cached function. "
+                "Pass cache_context={} explicitly if this request has no additional context."
+            )
+        cache_context = kwargs.pop("cache_context")
+        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
             record_stream_bypass()
             log.info("cache.stream_bypass", namespace=namespace)
+            return await fn(*args, **kwargs)
+
+        try:
+            context_hash = hash_context(cache_context)
+            prompt_text = self._extract_prompt(kwargs.get("messages", []))
+        except Exception as exc:
+            record_cache_error("params")
+            log.error("cache.params_failed", error=str(exc))
             return await fn(*args, **kwargs)
 
         if prompt_text is None:
@@ -113,11 +127,25 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Sync cache execution path with fail-open."""
-        namespace, context_hash, prompt_text = self._extract_cache_params(kwargs)
+        if "cache_context" not in kwargs:
+            raise ValueError(
+                "cache_context is required when calling a cached function. "
+                "Pass cache_context={} explicitly if this request has no additional context."
+            )
+        cache_context = kwargs.pop("cache_context")
+        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
             record_stream_bypass()
             log.info("cache.stream_bypass", namespace=namespace)
+            return fn(*args, **kwargs)
+
+        try:
+            context_hash = hash_context(cache_context)
+            prompt_text = self._extract_prompt(kwargs.get("messages", []))
+        except Exception as exc:
+            record_cache_error("params")
+            log.error("cache.params_failed", error=str(exc))
             return fn(*args, **kwargs)
 
         if prompt_text is None:
@@ -242,22 +270,6 @@ class SemanticCache:
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
-
-    def _extract_cache_params(
-        self, kwargs: dict[str, Any]
-    ) -> tuple[str, str, str | None]:
-        """Extract and validate cache kwargs, returning namespace/hash/prompt."""
-        if "cache_context" not in kwargs:
-            raise ValueError(
-                "cache_context is required when calling a cached function. "
-                "Pass cache_context={} explicitly if this request has no additional context."
-            )
-
-        cache_context = kwargs.pop("cache_context")
-        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
-        context_hash = hash_context(cache_context)
-        prompt_text = self._extract_prompt(kwargs.get("messages", []))
-        return namespace, context_hash, prompt_text
 
     def _extract_prompt(self, messages: Any) -> str | None:
         """Extract prompt text from model or dict messages."""
