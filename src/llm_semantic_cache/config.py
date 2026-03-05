@@ -9,6 +9,8 @@ THRESHOLD_PROFILES: Final[dict[str, float]] = {
     "balanced": 0.92,
     "loose": 0.85,
 }
+LARGE_NAMESPACE_THRESHOLD: Final[int] = 5_000
+"""Warn when a namespace exceeds this many entries. See AGENTS.md R2-3."""
 
 
 def resolve_threshold(profile_or_float: str | float) -> float:

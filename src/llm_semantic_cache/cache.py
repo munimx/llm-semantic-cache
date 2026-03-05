@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 import structlog
 
-from llm_semantic_cache.config import CacheConfig
+from llm_semantic_cache.config import CacheConfig, LARGE_NAMESPACE_THRESHOLD
 from llm_semantic_cache.context import hash_context
 from llm_semantic_cache.embeddings import Embedder, FastEmbedEmbedder
 from llm_semantic_cache.metrics import (
@@ -20,7 +20,6 @@ from llm_semantic_cache.metrics import (
     record_miss,
     record_stream_bypass,
 )
-from llm_semantic_cache.prompt import extract_prompt_text
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 log = structlog.get_logger(__name__)
@@ -79,25 +78,45 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Async cache execution path with fail-open and timeout."""
-        namespace, context_hash, prompt_text = self._extract_cache_params(kwargs)
+        if "cache_context" not in kwargs:
+            raise ValueError(
+                "cache_context is required when calling a cached function. "
+                "Pass cache_context={} explicitly if this request has no additional context."
+            )
+        cache_context = kwargs.pop("cache_context")
+        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
             record_stream_bypass()
             log.info("cache.stream_bypass", namespace=namespace)
             return await fn(*args, **kwargs)
 
+        try:
+            context_hash = hash_context(cache_context)
+            prompt_text = self._extract_prompt(kwargs.get("messages", []))
+        except Exception as exc:
+            record_cache_error("params")
+            log.error("cache.params_failed", error=str(exc))
+            return await fn(*args, **kwargs)
+
         if prompt_text is None:
             log.info("cache.no_user_message_bypass", namespace=namespace)
             return await fn(*args, **kwargs)
 
-        cached = await self._async_lookup(prompt_text, namespace, context_hash)
+        embedding, cached = await self._async_lookup(prompt_text, namespace, context_hash)
         if cached is not None:
             record_hit(namespace)
             log.info("cache.hit", namespace=namespace)
             return cached
 
         response = await fn(*args, **kwargs)
-        await self._async_store(prompt_text, context_hash, namespace, response)
+        await self._async_store(
+            prompt_text,
+            embedding,
+            context_hash,
+            namespace,
+            response,
+        )
 
         record_miss(namespace)
         log.info("cache.miss", namespace=namespace)
@@ -107,25 +126,45 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Sync cache execution path with fail-open."""
-        namespace, context_hash, prompt_text = self._extract_cache_params(kwargs)
+        if "cache_context" not in kwargs:
+            raise ValueError(
+                "cache_context is required when calling a cached function. "
+                "Pass cache_context={} explicitly if this request has no additional context."
+            )
+        cache_context = kwargs.pop("cache_context")
+        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
             record_stream_bypass()
             log.info("cache.stream_bypass", namespace=namespace)
             return fn(*args, **kwargs)
 
+        try:
+            context_hash = hash_context(cache_context)
+            prompt_text = self._extract_prompt(kwargs.get("messages", []))
+        except Exception as exc:
+            record_cache_error("params")
+            log.error("cache.params_failed", error=str(exc))
+            return fn(*args, **kwargs)
+
         if prompt_text is None:
             log.info("cache.no_user_message_bypass", namespace=namespace)
             return fn(*args, **kwargs)
 
-        cached = self._sync_lookup(prompt_text, namespace, context_hash)
+        embedding, cached = self._sync_lookup(prompt_text, namespace, context_hash)
         if cached is not None:
             record_hit(namespace)
             log.info("cache.hit", namespace=namespace)
             return cached
 
         response = fn(*args, **kwargs)
-        self._sync_store(prompt_text, context_hash, namespace, response)
+        self._sync_store(
+            prompt_text,
+            embedding,
+            context_hash,
+            namespace,
+            response,
+        )
 
         record_miss(namespace)
         log.info("cache.miss", namespace=namespace)
@@ -133,11 +172,16 @@ class SemanticCache:
 
     async def _async_lookup(
         self, prompt_text: str, namespace: str, context_hash: str
-    ) -> Any | None:
+    ) -> tuple[list[float], Any | None]:
         """Attempt cache lookup with timeout and fail-open on error."""
         try:
             with measure_embedding_latency():
                 embedding = self._embedder.embed(prompt_text)
+        except Exception as exc:
+            record_cache_error("lookup")
+            log.error("cache.lookup_failed", error=str(exc))
+            return [], None
+        try:
             result = await asyncio.wait_for(
                 self._storage.asearch(
                     embedding=embedding,
@@ -148,19 +192,24 @@ class SemanticCache:
                 ),
                 timeout=self._config.cache_timeout_seconds,
             )
-            return result.response if result is not None else None
+            return embedding, result.response if result is not None else None
         except Exception as exc:
             record_cache_error("lookup")
             log.error("cache.lookup_failed", error=str(exc))
-            return None
+            return embedding, None
 
     def _sync_lookup(
         self, prompt_text: str, namespace: str, context_hash: str
-    ) -> Any | None:
+    ) -> tuple[list[float], Any | None]:
         """Sync cache lookup with fail-open on error."""
         try:
             with measure_embedding_latency():
                 embedding = self._embedder.embed(prompt_text)
+        except Exception as exc:
+            record_cache_error("lookup")
+            log.error("cache.lookup_failed", error=str(exc))
+            return [], None
+        try:
             result = self._storage.search(
                 embedding=embedding,
                 namespace=namespace,
@@ -168,23 +217,22 @@ class SemanticCache:
                 context_hash=context_hash,
                 threshold=self._threshold,
             )
-            return result.response if result is not None else None
+            return embedding, result.response if result is not None else None
         except Exception as exc:
             record_cache_error("lookup")
             log.error("cache.lookup_failed", error=str(exc))
-            return None
+            return embedding, None
 
     async def _async_store(
         self,
         prompt_text: str,
+        embedding: list[float],
         context_hash: str,
         namespace: str,
         response: Any,
     ) -> None:
         """Attempt to store a response in the cache. Fail-open on error."""
         try:
-            with measure_embedding_latency():
-                embedding = self._embedder.embed(prompt_text)
             entry = self._build_entry(
                 prompt_text,
                 embedding,
@@ -196,6 +244,14 @@ class SemanticCache:
                 self._storage.astore(entry),
                 timeout=self._config.cache_timeout_seconds,
             )
+            size = await self._storage.anamespace_size(namespace)
+            if size > LARGE_NAMESPACE_THRESHOLD:
+                log.warning(
+                    "cache.namespace_too_large",
+                    namespace=namespace,
+                    size=size,
+                    threshold=LARGE_NAMESPACE_THRESHOLD,
+                )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
@@ -203,14 +259,13 @@ class SemanticCache:
     def _sync_store(
         self,
         prompt_text: str,
+        embedding: list[float],
         context_hash: str,
         namespace: str,
         response: Any,
     ) -> None:
         """Sync store with fail-open on error."""
         try:
-            with measure_embedding_latency():
-                embedding = self._embedder.embed(prompt_text)
             entry = self._build_entry(
                 prompt_text,
                 embedding,
@@ -219,35 +274,30 @@ class SemanticCache:
                 response,
             )
             self._storage.store(entry)
+            size = self._storage.namespace_size(namespace)
+            if size > LARGE_NAMESPACE_THRESHOLD:
+                log.warning(
+                    "cache.namespace_too_large",
+                    namespace=namespace,
+                    size=size,
+                    threshold=LARGE_NAMESPACE_THRESHOLD,
+                )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
 
-    def _extract_cache_params(
-        self, kwargs: dict[str, Any]
-    ) -> tuple[str, str, str | None]:
-        """Extract and validate cache kwargs, returning namespace/hash/prompt."""
-        if "cache_context" not in kwargs:
-            raise ValueError(
-                "cache_context is required when calling a cached function. "
-                "Pass cache_context={} explicitly if this request has no additional context."
-            )
-
-        cache_context = kwargs.pop("cache_context")
-        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
-        context_hash = hash_context(cache_context)
-        prompt_text = self._extract_prompt(kwargs.get("messages", []))
-        return namespace, context_hash, prompt_text
-
     def _extract_prompt(self, messages: Any) -> str | None:
-        """Extract prompt text from model or dict messages."""
-        try:
-            return extract_prompt_text(messages)
-        except Exception:
-            pass
-        if not isinstance(messages, list):
+        """Extract prompt text from OpenAI-style messages."""
+        if not isinstance(messages, list) or not messages:
             return None
         for message in reversed(messages):
+            if hasattr(message, "role") and hasattr(message, "content"):
+                if message.role != "user":
+                    continue
+                content = message.content
+                if isinstance(content, str) and content.strip():
+                    return content.strip()
+                return None
             if not isinstance(message, dict):
                 continue
             if message.get("role") != "user":

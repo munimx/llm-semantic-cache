@@ -39,6 +39,26 @@ def test_sync_cache_miss_calls_original_function(fake_embedder: Any) -> None:
     assert calls["count"] == 1
 
 
+def test_embedding_called_once_on_miss(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+    embed_calls = {"count": 0}
+    original_embed = fake_embedder.embed
+
+    def counted_embed(text: str) -> list[float]:
+        embed_calls["count"] += 1
+        return original_embed(text)
+
+    fake_embedder.embed = counted_embed  # type: ignore[method-assign]
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={})
+
+    assert embed_calls["count"] == 1
+
+
 def test_sync_cache_hit_does_not_call_original_function(fake_embedder: Any) -> None:
     cache = make_cache(fake_embedder)
     calls = {"count": 0}
@@ -109,6 +129,21 @@ def test_cache_context_empty_dict_is_valid(fake_embedder: Any) -> None:
 
     wrapped = cache.wrap(create)
     assert wrapped(messages=MESSAGES, cache_context={}) == RESPONSE
+
+
+def test_bad_cache_context_type_fails_open(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+    calls = {"count": 0}
+
+    def create(**_: Any) -> dict[str, Any]:
+        calls["count"] += 1
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    response = wrapped(messages=MESSAGES, cache_context={"key": object()})
+
+    assert response == RESPONSE
+    assert calls["count"] == 1
 
 
 def test_stream_true_bypasses_cache_sync(fake_embedder: Any) -> None:
@@ -247,6 +282,38 @@ def test_sync_store_failure_does_not_raise(fake_embedder: Any) -> None:
 
     wrapped = cache.wrap(create)
     assert wrapped(messages=MESSAGES, cache_context={}) == RESPONSE
+
+
+def test_namespace_size_warning_logged(
+    fake_embedder: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class LargeNamespaceStorage(InMemoryStorage):
+        def namespace_size(self, namespace: str) -> int:
+            return 5001
+
+    warnings: list[tuple[str, dict[str, Any]]] = []
+
+    def capture_warning(event: str, **kwargs: Any) -> None:
+        warnings.append((event, kwargs))
+
+    monkeypatch.setattr("llm_semantic_cache.cache.log.warning", capture_warning)
+
+    cache = SemanticCache(
+        storage=LargeNamespaceStorage(),
+        config=CacheConfig(threshold=0.85, cache_timeout_seconds=1.0),
+        embedder=fake_embedder,
+    )
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={}, cache_namespace="ns")
+
+    assert warnings
+    assert warnings[0][0] == "cache.namespace_too_large"
+    assert warnings[0][1]["namespace"] == "ns"
+    assert warnings[0][1]["size"] == 5001
 
 
 @pytest.mark.asyncio
