@@ -287,26 +287,10 @@ class SemanticCache:
             log.error("cache.store_failed", error=str(exc))
 
     def _extract_prompt(self, messages: Any) -> str | None:
-        """Extract prompt text from OpenAI-style messages."""
-        if not isinstance(messages, list) or not messages:
+        """Extract prompt text from OpenAI-style messages (Pydantic or dict)."""
+        if not isinstance(messages, list):
             return None
-        for message in reversed(messages):
-            if hasattr(message, "role") and hasattr(message, "content"):
-                if message.role != "user":
-                    continue
-                content = message.content
-                if isinstance(content, str) and content.strip():
-                    return content.strip()
-                return None
-            if not isinstance(message, dict):
-                continue
-            if message.get("role") != "user":
-                continue
-            content = message.get("content")
-            if isinstance(content, str) and content.strip():
-                return content.strip()
-            return None
-        return None
+        return extract_prompt_text(messages)
 
     def _build_entry(
         self,
