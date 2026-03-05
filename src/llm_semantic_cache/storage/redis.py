@@ -22,9 +22,8 @@ def _ns_index_key(namespace: str) -> str:
 class RedisStorage(StorageBackend):
     """Redis-backed storage for SemanticCache.
 
-    Uses native redis.asyncio for all async operations. Sync methods are
-    implemented via asyncio.run() — for async applications, use the a*()
-    methods directly.
+    Uses native redis.asyncio for async operations and optional redis.Redis for
+    sync operations.
 
     Scaling note: This backend fetches all candidate vectors from Redis to
     Python for cosine similarity computation. Performance degrades when a
@@ -32,14 +31,49 @@ class RedisStorage(StorageBackend):
     workloads, or wait for a vector-native backend.
     """
 
-    def __init__(self, client: Any) -> None:
-        """Initialize with redis.asyncio client."""
+    def __init__(self, client: Any, sync_client: Any = None) -> None:
+        """Initialize with async (redis.asyncio) and optional sync (redis.Redis) clients.
+
+        Args:
+            client: An async redis.asyncio client for async operations.
+            sync_client: A synchronous redis.Redis client for sync operations.
+                If None, sync methods (store, search, invalidate_namespace, clear,
+                namespace_size) will raise RuntimeError. Use the async a*() methods
+                in async frameworks (FastAPI, Starlette) instead.
+        """
         self._client = client
+        self._sync_client = sync_client
+
+    def _require_sync_client(self) -> Any:
+        """Return sync client or raise RuntimeError."""
+        if self._sync_client is None:
+            raise RuntimeError(
+                "RedisStorage was initialized without a sync_client. "
+                "Pass sync_client=redis.Redis(...) to use sync methods, "
+                "or use the async a*() methods in async frameworks."
+            )
+        return self._sync_client
 
     def store(self, entry: CacheEntry) -> None:
-        import asyncio
-
-        asyncio.run(self.astore(entry))
+        sync_client = self._require_sync_client()
+        key = _entry_key(entry.id)
+        payload = {
+            "id": entry.id,
+            "embedding": json.dumps(entry.embedding),
+            "prompt_text": entry.prompt_text,
+            "context_hash": entry.context_hash,
+            "namespace": entry.namespace,
+            "embedding_model_id": entry.embedding_model_id,
+            "response": json.dumps(entry.response),
+            "created_at": str(entry.created_at),
+            "ttl": str(entry.ttl) if entry.ttl is not None else "",
+        }
+        pipe = sync_client.pipeline()
+        pipe.hset(key, mapping=payload)
+        pipe.sadd(_ns_index_key(entry.namespace), entry.id)
+        if entry.ttl is not None:
+            pipe.pexpire(key, max(1, int(entry.ttl * 1000)))
+        pipe.execute()
 
     def search(
         self,
@@ -49,26 +83,74 @@ class RedisStorage(StorageBackend):
         context_hash: str,
         threshold: float,
     ) -> CacheEntry | None:
-        import asyncio
+        sync_client = self._require_sync_client()
+        ns_key = _ns_index_key(namespace)
+        entry_ids = sync_client.smembers(ns_key)
+        if not entry_ids:
+            return None
 
-        return asyncio.run(
-            self.asearch(embedding, namespace, embedding_model_id, context_hash, threshold)
-        )
+        decoded_ids = [
+            raw_id.decode() if isinstance(raw_id, bytes) else raw_id for raw_id in entry_ids
+        ]
+        pipe = sync_client.pipeline()
+        for entry_id in decoded_ids:
+            pipe.hgetall(_entry_key(entry_id))
+        results = pipe.execute()
+
+        best_entry: CacheEntry | None = None
+        best_score = -1.0
+        dead_ids: list[str] = []
+
+        for entry_id, data in zip(decoded_ids, results):
+            if not data:
+                dead_ids.append(entry_id)
+                continue
+
+            entry = _deserialize_entry(data)
+            if entry.embedding_model_id != embedding_model_id:
+                continue
+            if entry.context_hash != context_hash:
+                continue
+            if entry.is_expired():
+                dead_ids.append(entry_id)
+                continue
+
+            score = cosine_similarity(embedding, entry.embedding)
+            if score >= threshold and score > best_score:
+                best_score = score
+                best_entry = entry
+
+        if dead_ids:
+            sync_client.srem(ns_key, *dead_ids)
+
+        return best_entry
 
     def invalidate_namespace(self, namespace: str) -> int:
-        import asyncio
+        sync_client = self._require_sync_client()
+        ns_key = _ns_index_key(namespace)
+        entry_ids = sync_client.smembers(ns_key)
+        if not entry_ids:
+            return 0
 
-        return asyncio.run(self.ainvalidate_namespace(namespace))
+        entry_keys = [
+            _entry_key(eid.decode() if isinstance(eid, bytes) else eid) for eid in entry_ids
+        ]
+        pipe = sync_client.pipeline()
+        for key in entry_keys:
+            pipe.delete(key)
+        pipe.delete(ns_key)
+        pipe.execute()
+        return len(entry_ids)
 
     def clear(self) -> None:
-        import asyncio
-
-        asyncio.run(self.aclear())
+        sync_client = self._require_sync_client()
+        keys = sync_client.keys("llmsc:*")
+        if keys:
+            sync_client.delete(*keys)
 
     def namespace_size(self, namespace: str) -> int:
-        raise RuntimeError(
-            "RedisStorage.namespace_size() requires a sync client. Use anamespace_size() in async contexts."
-        )
+        sync_client = self._require_sync_client()
+        return cast(int, sync_client.scard(_ns_index_key(namespace)))
 
     async def astore(self, entry: CacheEntry) -> None:
         """Store a cache entry in Redis."""
