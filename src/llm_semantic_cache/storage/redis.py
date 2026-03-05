@@ -2,13 +2,26 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any, cast
+
+import numpy as np
 
 from llm_semantic_cache.similarity import cosine_similarity
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 _ENTRY_PREFIX = "llmsc:entry:"
 _NS_INDEX_PREFIX = "llmsc:ns:"
+_FILTER_FIELDS = (
+    "id",
+    "embedding",
+    "embedding_model_id",
+    "context_hash",
+    "ttl",
+    "created_at",
+    "prompt_text",
+    "namespace",
+)
 
 
 def _entry_key(entry_id: str) -> str:
@@ -192,36 +205,57 @@ class RedisStorage(StorageBackend):
         ]
         pipe = self._client.pipeline()
         for entry_id in decoded_ids:
-            pipe.hgetall(_entry_key(entry_id))
+            pipe.hmget(_entry_key(entry_id), *_FILTER_FIELDS)
         results = await pipe.execute()
 
-        best_entry: CacheEntry | None = None
-        best_score = -1.0
+        candidate_ids: list[str] = []
+        candidate_embeddings: list[list[float]] = []
         dead_ids: list[str] = []
 
         for entry_id, data in zip(decoded_ids, results):
-            if not data:
+            if data is None or all(value is None for value in data):
                 dead_ids.append(entry_id)
                 continue
 
-            entry = _deserialize_entry(data)
-            if entry.embedding_model_id != embedding_model_id:
+            row = [
+                value.decode() if isinstance(value, bytes) else (value or "")
+                for value in data
+            ]
+            row_data = dict(zip(_FILTER_FIELDS, row))
+            if row_data["embedding_model_id"] != embedding_model_id:
                 continue
-            if entry.context_hash != context_hash:
-                continue
-            if entry.is_expired():
-                dead_ids.append(entry_id)
+            if row_data["context_hash"] != context_hash:
                 continue
 
-            score = cosine_similarity(embedding, entry.embedding)
-            if score >= threshold and score > best_score:
-                best_score = score
-                best_entry = entry
+            ttl_str = row_data["ttl"]
+            created_at_str = row_data["created_at"]
+            if ttl_str and created_at_str:
+                if (time.time() - float(created_at_str)) > float(ttl_str):
+                    dead_ids.append(entry_id)
+                    continue
+
+            candidate_ids.append(entry_id)
+            candidate_embeddings.append(json.loads(row_data["embedding"]))
 
         if dead_ids:
             await self._client.srem(ns_key, *dead_ids)
 
-        return best_entry
+        if not candidate_ids:
+            return None
+
+        query = np.array(embedding, dtype=np.float64)
+        matrix = np.array(candidate_embeddings, dtype=np.float64)
+        scores = matrix @ query
+        best_idx = int(np.argmax(scores))
+        best_score = float(scores[best_idx])
+        if best_score < threshold:
+            return None
+
+        winner_id = candidate_ids[best_idx]
+        winner_data = await self._client.hgetall(_entry_key(winner_id))
+        if not winner_data:
+            return None
+        return _deserialize_entry(winner_data)
 
     async def ainvalidate_namespace(self, namespace: str) -> int:
         """Delete all entries in a namespace atomically via pipeline."""
