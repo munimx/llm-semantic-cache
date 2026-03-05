@@ -39,6 +39,9 @@ class SemanticCache:
         self._config = config or CacheConfig()
         self._embedder = embedder or FastEmbedEmbedder(self._config.embedding_model)
         self._threshold = self._config.resolved_threshold()
+        # Warm up the embedding model eagerly to prevent cold-start cache bypass.
+        # The lazy load on first use can take seconds; we absorb this cost at init time.
+        self._embedder.embed("warmup")
 
     def wrap(
         self,
