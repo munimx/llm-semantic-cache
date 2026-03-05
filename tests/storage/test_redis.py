@@ -1,6 +1,7 @@
 """Tests for RedisStorage using fakeredis (no real Redis required)."""
 import asyncio
 
+import fakeredis
 import fakeredis.aioredis
 import pytest
 import pytest_asyncio
@@ -74,6 +75,19 @@ async def test_asearch_returns_best_match_above_threshold(redis_storage):
     await redis_storage.astore(better)
 
     match = await redis_storage.asearch([1.0, 0.0], "test", "test-model", "abc123", 0.7)
+
+    assert match is not None
+    assert match.id == better.id
+
+
+@pytest.mark.asyncio
+async def test_asearch_pipelines_hgetall(redis_storage):
+    worse = make_entry([0.7, 0.3], namespace="ns")
+    better = make_entry([1.0, 0.0], namespace="ns")
+    await redis_storage.astore(worse)
+    await redis_storage.astore(better)
+
+    match = await redis_storage.asearch([1.0, 0.0], "ns", "test-model", "abc123", 0.6)
 
     assert match is not None
     assert match.id == better.id
@@ -157,3 +171,23 @@ async def test_astore_sets_ttl_on_redis_key(redis_storage):
     data = await redis_storage._client.hgetall(f"llmsc:entry:{entry.id}")
 
     assert data == {}
+
+
+def test_store_search_sync_with_sync_client():
+    async_client = fakeredis.aioredis.FakeRedis()
+    sync_client = fakeredis.FakeRedis()
+    storage = RedisStorage(async_client, sync_client=sync_client)
+    entry = make_entry([1.0, 0.0], namespace="ns")
+
+    storage.store(entry)
+    match = storage.search([1.0, 0.0], "ns", "test-model", "abc123", 0.9)
+
+    assert match is not None
+    assert match.id == entry.id
+
+
+def test_sync_methods_raise_without_sync_client():
+    storage = RedisStorage(fakeredis.aioredis.FakeRedis())
+
+    with pytest.raises(RuntimeError, match="initialized without a sync_client"):
+        storage.store(make_entry([1.0, 0.0]))
