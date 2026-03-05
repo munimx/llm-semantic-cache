@@ -94,6 +94,34 @@ async def test_asearch_pipelines_hgetall(redis_storage):
 
 
 @pytest.mark.asyncio
+async def test_asearch_does_not_fetch_response_before_filtering(redis_storage):
+    winner = make_entry([1.0, 0.0], namespace="ns", context_hash="target")
+    filtered = make_entry([0.9, 0.1], namespace="ns", context_hash="other")
+    await redis_storage.astore(winner)
+    await redis_storage.astore(filtered)
+
+    original_hgetall = redis_storage._client.hgetall
+    call_count = 0
+
+    async def counted_hgetall(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        return await original_hgetall(*args, **kwargs)
+
+    redis_storage._client.hgetall = counted_hgetall
+    try:
+        match = await redis_storage.asearch(
+            [1.0, 0.0], "ns", "test-model", "target", 0.6
+        )
+    finally:
+        redis_storage._client.hgetall = original_hgetall
+
+    assert match is not None
+    assert match.id == winner.id
+    assert call_count == 1
+
+
+@pytest.mark.asyncio
 async def test_ainvalidate_namespace_removes_all_entries(redis_storage):
     a = make_entry([1.0, 0.0], namespace="ns")
     b = make_entry([0.9, 0.1], namespace="ns")
