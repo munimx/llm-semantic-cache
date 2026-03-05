@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 import structlog
 
-from llm_semantic_cache.config import CacheConfig
+from llm_semantic_cache.config import CacheConfig, LARGE_NAMESPACE_THRESHOLD
 from llm_semantic_cache.context import hash_context
 from llm_semantic_cache.embeddings import Embedder, FastEmbedEmbedder
 from llm_semantic_cache.metrics import (
@@ -244,6 +244,14 @@ class SemanticCache:
                 self._storage.astore(entry),
                 timeout=self._config.cache_timeout_seconds,
             )
+            size = await self._storage.anamespace_size(namespace)
+            if size > LARGE_NAMESPACE_THRESHOLD:
+                log.warning(
+                    "cache.namespace_too_large",
+                    namespace=namespace,
+                    size=size,
+                    threshold=LARGE_NAMESPACE_THRESHOLD,
+                )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
@@ -266,6 +274,14 @@ class SemanticCache:
                 response,
             )
             self._storage.store(entry)
+            size = self._storage.namespace_size(namespace)
+            if size > LARGE_NAMESPACE_THRESHOLD:
+                log.warning(
+                    "cache.namespace_too_large",
+                    namespace=namespace,
+                    size=size,
+                    threshold=LARGE_NAMESPACE_THRESHOLD,
+                )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
