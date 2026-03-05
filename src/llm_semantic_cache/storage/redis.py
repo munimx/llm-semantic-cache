@@ -65,6 +65,11 @@ class RedisStorage(StorageBackend):
 
         asyncio.run(self.aclear())
 
+    def namespace_size(self, namespace: str) -> int:
+        raise RuntimeError(
+            "RedisStorage.namespace_size() requires a sync client. Use anamespace_size() in async contexts."
+        )
+
     async def astore(self, entry: CacheEntry) -> None:
         """Store a cache entry in Redis."""
         key = _entry_key(entry.id)
@@ -156,7 +161,7 @@ class RedisStorage(StorageBackend):
         if keys:
             await self._client.delete(*keys)
 
-    async def namespace_size(self, namespace: str) -> int:
+    async def anamespace_size(self, namespace: str) -> int:
         """Return the number of (potentially live) entries in a namespace."""
         return cast(int, await self._client.scard(_ns_index_key(namespace)))
 

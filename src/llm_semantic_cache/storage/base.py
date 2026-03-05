@@ -89,6 +89,15 @@ class StorageBackend(ABC):
     def clear(self) -> None:
         """Delete all entries in all namespaces."""
 
+    @abstractmethod
+    def namespace_size(self, namespace: str) -> int:
+        """Return the count of entries in a namespace.
+
+        Note: backends may include expired (not-yet-evicted) entries in the count.
+        Use this for monitoring and the 5,000-entry scale warning, not for exact
+        entry counts.
+        """
+
     async def astore(self, entry: CacheEntry) -> None:
         """Async version of store()."""
         import asyncio
@@ -121,3 +130,9 @@ class StorageBackend(ABC):
         import asyncio
 
         await asyncio.to_thread(self.clear)
+
+    async def anamespace_size(self, namespace: str) -> int:
+        """Async version of namespace_size()."""
+        import asyncio
+
+        return await asyncio.to_thread(self.namespace_size, namespace)

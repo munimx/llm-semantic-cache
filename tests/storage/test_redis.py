@@ -115,8 +115,8 @@ async def test_aclear_removes_all_entries(redis_storage):
 
     await redis_storage.aclear()
 
-    assert await redis_storage.namespace_size("a") == 0
-    assert await redis_storage.namespace_size("b") == 0
+    assert await redis_storage.anamespace_size("a") == 0
+    assert await redis_storage.anamespace_size("b") == 0
 
 
 @pytest.mark.asyncio
@@ -137,7 +137,7 @@ async def test_lazy_tombstone_cleanup(redis_storage):
     match = await redis_storage.asearch([1.0, 0.0], "ns", "test-model", "abc123", 0.0)
 
     assert match is None
-    assert await redis_storage.namespace_size("ns") == 0
+    assert await redis_storage.anamespace_size("ns") == 0
 
 
 @pytest.mark.asyncio
@@ -145,7 +145,7 @@ async def test_namespace_size_returns_count(redis_storage):
     await redis_storage.astore(make_entry([1.0, 0.0], namespace="ns"))
     await redis_storage.astore(make_entry([0.9, 0.1], namespace="ns"))
 
-    assert await redis_storage.namespace_size("ns") == 2
+    assert await redis_storage.anamespace_size("ns") == 2
 
 
 @pytest.mark.asyncio
