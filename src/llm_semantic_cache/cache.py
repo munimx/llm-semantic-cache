@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import random
 import uuid
 from collections.abc import Callable
 from typing import Any, Literal
@@ -20,6 +21,7 @@ from llm_semantic_cache.metrics import (
     record_miss,
     record_stream_bypass,
 )
+from llm_semantic_cache.prompt import extract_prompt_text
 from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 
 log = structlog.get_logger(__name__)
@@ -38,6 +40,9 @@ class SemanticCache:
         self._config = config or CacheConfig()
         self._embedder = embedder or FastEmbedEmbedder(self._config.embedding_model)
         self._threshold = self._config.resolved_threshold()
+        # Warm up the embedding model eagerly to prevent cold-start cache bypass.
+        # The lazy load on first use can take seconds; we absorb this cost at init time.
+        self._embedder.embed("warmup")
 
     def wrap(
         self,
@@ -92,15 +97,14 @@ class SemanticCache:
             return await fn(*args, **kwargs)
 
         try:
-            context_hash = hash_context(cache_context)
             prompt_text = self._extract_prompt(kwargs.get("messages", []))
+            if prompt_text is None:
+                log.info("cache.no_user_message_bypass", namespace=namespace)
+                return await fn(*args, **kwargs)
+            context_hash = hash_context(cache_context)
         except Exception as exc:
             record_cache_error("params")
             log.error("cache.params_failed", error=str(exc))
-            return await fn(*args, **kwargs)
-
-        if prompt_text is None:
-            log.info("cache.no_user_message_bypass", namespace=namespace)
             return await fn(*args, **kwargs)
 
         embedding, cached = await self._async_lookup(prompt_text, namespace, context_hash)
@@ -140,15 +144,14 @@ class SemanticCache:
             return fn(*args, **kwargs)
 
         try:
-            context_hash = hash_context(cache_context)
             prompt_text = self._extract_prompt(kwargs.get("messages", []))
+            if prompt_text is None:
+                log.info("cache.no_user_message_bypass", namespace=namespace)
+                return fn(*args, **kwargs)
+            context_hash = hash_context(cache_context)
         except Exception as exc:
             record_cache_error("params")
             log.error("cache.params_failed", error=str(exc))
-            return fn(*args, **kwargs)
-
-        if prompt_text is None:
-            log.info("cache.no_user_message_bypass", namespace=namespace)
             return fn(*args, **kwargs)
 
         embedding, cached = self._sync_lookup(prompt_text, namespace, context_hash)
@@ -244,14 +247,15 @@ class SemanticCache:
                 self._storage.astore(entry),
                 timeout=self._config.cache_timeout_seconds,
             )
-            size = await self._storage.anamespace_size(namespace)
-            if size > LARGE_NAMESPACE_THRESHOLD:
-                log.warning(
-                    "cache.namespace_too_large",
-                    namespace=namespace,
-                    size=size,
-                    threshold=LARGE_NAMESPACE_THRESHOLD,
-                )
+            if random.random() < 0.01:
+                size = await self._storage.anamespace_size(namespace)
+                if size > LARGE_NAMESPACE_THRESHOLD:
+                    log.warning(
+                        "cache.namespace_too_large",
+                        namespace=namespace,
+                        size=size,
+                        threshold=LARGE_NAMESPACE_THRESHOLD,
+                    )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
@@ -274,39 +278,24 @@ class SemanticCache:
                 response,
             )
             self._storage.store(entry)
-            size = self._storage.namespace_size(namespace)
-            if size > LARGE_NAMESPACE_THRESHOLD:
-                log.warning(
-                    "cache.namespace_too_large",
-                    namespace=namespace,
-                    size=size,
-                    threshold=LARGE_NAMESPACE_THRESHOLD,
-                )
+            if random.random() < 0.01:
+                size = self._storage.namespace_size(namespace)
+                if size > LARGE_NAMESPACE_THRESHOLD:
+                    log.warning(
+                        "cache.namespace_too_large",
+                        namespace=namespace,
+                        size=size,
+                        threshold=LARGE_NAMESPACE_THRESHOLD,
+                    )
         except Exception as exc:
             record_cache_error("store")
             log.error("cache.store_failed", error=str(exc))
 
     def _extract_prompt(self, messages: Any) -> str | None:
-        """Extract prompt text from OpenAI-style messages."""
-        if not isinstance(messages, list) or not messages:
+        """Extract prompt text from OpenAI-style messages (Pydantic or dict)."""
+        if not isinstance(messages, list):
             return None
-        for message in reversed(messages):
-            if hasattr(message, "role") and hasattr(message, "content"):
-                if message.role != "user":
-                    continue
-                content = message.content
-                if isinstance(content, str) and content.strip():
-                    return content.strip()
-                return None
-            if not isinstance(message, dict):
-                continue
-            if message.get("role") != "user":
-                continue
-            content = message.get("content")
-            if isinstance(content, str) and content.strip():
-                return content.strip()
-            return None
-        return None
+        return extract_prompt_text(messages)
 
     def _build_entry(
         self,
@@ -321,10 +310,12 @@ class SemanticCache:
             response_dict = response
         elif hasattr(response, "model_dump"):
             response_dict = response.model_dump(mode="json")
-        elif hasattr(response, "__dict__"):
-            response_dict = vars(response)
         else:
-            response_dict = {"value": response}
+            raise TypeError(
+                f"Cannot serialize response of type {type(response).__name__!r}. "
+                "SemanticCache expects an OpenAI-compatible response (dict or Pydantic model). "
+                "For non-standard responses, convert to a dict before passing to the cached function."
+            )
 
         return CacheEntry(
             id=str(uuid.uuid4()),

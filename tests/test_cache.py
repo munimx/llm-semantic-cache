@@ -284,6 +284,22 @@ def test_sync_store_failure_does_not_raise(fake_embedder: Any) -> None:
     assert wrapped(messages=MESSAGES, cache_context={}) == RESPONSE
 
 
+def test_build_entry_raises_for_unsupported_response(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    class UnsupportedResponse:
+        pass
+
+    with pytest.raises(TypeError, match="Cannot serialize response"):
+        cache._build_entry(
+            prompt_text="hello",
+            embedding=[0.1, 0.2],
+            context_hash="ctx",
+            namespace="ns",
+            response=UnsupportedResponse(),
+        )
+
+
 def test_namespace_size_warning_logged(
     fake_embedder: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -297,6 +313,7 @@ def test_namespace_size_warning_logged(
         warnings.append((event, kwargs))
 
     monkeypatch.setattr("llm_semantic_cache.cache.log.warning", capture_warning)
+    monkeypatch.setattr("llm_semantic_cache.cache.random.random", lambda: 0.0)
 
     cache = SemanticCache(
         storage=LargeNamespaceStorage(),

@@ -47,3 +47,20 @@ def test_mixed_roles_returns_correct_user_message() -> None:
         ChatMessage(role="assistant", content="b"),
     ]
     assert extract_prompt_text(messages) == "target"
+
+
+def test_extract_prompt_from_dicts() -> None:
+    messages = [
+        {"role": "system", "content": "rules"},
+        {"role": "user", "content": "first"},
+        {"role": "user", "content": "second"},
+    ]
+    assert extract_prompt_text(messages) == "second"
+
+
+def test_extract_prompt_skips_empty_user_then_finds_earlier() -> None:
+    messages = [
+        {"role": "user", "content": "real"},
+        {"role": "user", "content": ""},
+    ]
+    assert extract_prompt_text(messages) == "real"
