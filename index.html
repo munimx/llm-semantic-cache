@@ -46,10 +46,12 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Plus+Jakarta+Sans:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Plus Jakarta Sans";--md-code-font:"JetBrains Mono"}</style>
       
     
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
     
     <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -67,18 +69,13 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="recallm-dark" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#recallm" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -123,9 +120,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="recallm-dark" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -133,9 +130,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="recallm-light" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -446,26 +443,6 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Home
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
         
@@ -483,91 +460,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#why-semantic-caching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why semantic caching?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Install
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quickstart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quickstart
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#expected-hit-rates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Expected hit rates
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#known-limitations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Known limitations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -806,82 +698,6 @@
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#why-semantic-caching" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why semantic caching?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Install
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quickstart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quickstart
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#expected-hit-rates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Expected hit rates
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#known-limitations" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Known limitations
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -901,46 +717,99 @@
   
 
 
-<h1 id="recallm">Recallm</h1>
-<p>Semantic caching for LLMs. Ask once, recall forever.</p>
-<h2 id="why-semantic-caching">Why semantic caching?</h2>
-<p>Exact-match caching is useless for LLMs — two users asking the same question in slightly different words both pay the full API cost. Recallm uses sentence embeddings to find near-matches and return cached responses instantly. The result: lower API costs, reduced latency, and no changes to your existing LLM client code.</p>
-<h2 id="install">Install</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>recallm
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;recallm[redis]&quot;</span><span class="w">   </span><span class="c1"># persistent cache, shared across workers</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;recallm[torch]&quot;</span><span class="w">   </span><span class="c1"># sentence-transformers embedder (700MB, PyTorch)</span>
-</code></pre></div>
-<h2 id="quickstart">Quickstart</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">llm_semantic_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">SemanticCache</span><span class="p">,</span> <span class="n">CacheConfig</span><span class="p">,</span> <span class="n">InMemoryStorage</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">cache</span> <span class="o">=</span> <span class="n">SemanticCache</span><span class="p">(</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">storage</span><span class="o">=</span><span class="n">InMemoryStorage</span><span class="p">(),</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">config</span><span class="o">=</span><span class="n">CacheConfig</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mf">0.92</span><span class="p">),</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">create</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">)</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># First call: cache miss — LLM is called</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">response</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">}],</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">cache_context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;u123&quot;</span><span class="p">},</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="p">)</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># Second call: semantically equivalent — cache hit, no LLM call</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">response</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Capital of France?&quot;</span><span class="p">}],</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">cache_context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;u123&quot;</span><span class="p">},</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="p">)</span>
-</code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Async frameworks</p>
-<p><code>SemanticCache(...)</code> loads the embedding model synchronously. In FastAPI or other
-async frameworks, use <code>await cache.async_warmup()</code> during startup instead.</p>
+<div class="hero-grid">
+<div class="hero-content">
+
+<span class="hero-eyebrow">Python Library · MIT License · v0.1.0</span>
+
+<h1 class="hero-title">Ask once,<br>recall forever.</h1>
+
+<p class="hero-subtitle">Stop paying for identical prompts. Recallm wraps your OpenAI-compatible client to return instant cached responses for semantically similar queries — no proxy, no infrastructure changes.</p>
+
+<div class="hero-actions">
+<span class="hero-install"><span class="hero-install-icon">$</span> pip install recallm</span>
+<a href="getting-started/" class="md-button md-button--primary">Get started →</a>
 </div>
-<h2 id="expected-hit-rates">Expected hit rates</h2>
+
+</div>
+<div class="hero-code-panel">
+<div class="hero-code-titlebar">
+<span class="hero-code-dot hero-code-dot--red"></span>
+<span class="hero-code-dot hero-code-dot--yellow"></span>
+<span class="hero-code-dot hero-code-dot--green"></span>
+<span class="hero-code-filename">app.py</span>
+</div>
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">llm_semantic_cache</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">SemanticCache</span><span class="p">,</span> <span class="n">CacheConfig</span><span class="p">,</span> <span class="n">InMemoryStorage</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">cache</span> <span class="o">=</span> <span class="n">SemanticCache</span><span class="p">(</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">storage</span><span class="o">=</span><span class="n">InMemoryStorage</span><span class="p">(),</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">config</span><span class="o">=</span><span class="n">CacheConfig</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="mf">0.92</span><span class="p">),</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">create</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># First call — LLM is invoked, result cached</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">response</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Capital of France?&quot;</span><span class="p">}],</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">cache_context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;u123&quot;</span><span class="p">},</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1"># Semantically equivalent — cache hit, 0ms LLM latency</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">response</span> <span class="o">=</span> <span class="n">create</span><span class="p">(</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;What is the capital of France?&quot;</span><span class="p">}],</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    <span class="n">cache_context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="s2">&quot;u123&quot;</span><span class="p">},</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
+
+<hr />
+<p><span class="section-label">How it works</span></p>
+<div class="steps-grid">
+<div class="step-card">
+<div class="step-number">Step 01</div>
+<h3>Intercept</h3>
+<p>You wrap your client's <code>create</code> method once. Recallm intercepts every request before it leaves your application — no proxy servers, no infrastructure changes, no new services to run.</p>
+</div>
+<div class="step-card">
+<div class="step-number">Step 02</div>
+<h3>Embed &amp; search</h3>
+<p>The prompt is converted to a vector locally using a fast ONNX model (~20MB, sub-10ms on CPU). We search your storage backend for entries with cosine similarity above your threshold.</p>
+</div>
+<div class="step-card">
+<div class="step-number">Step 03</div>
+<h3>Recall or forward</h3>
+<p>Hit: the cached response is returned instantly. Miss: the original call proceeds, the response is stored, and future similar prompts benefit from the cache. You always get a response.</p>
+</div>
+</div>
+
+<hr />
+<p><span class="section-label">By the numbers</span></p>
+<div class="stats-strip">
+<div class="stat-item">
+<span class="stat-number">&lt;10ms</span>
+<span class="stat-label">added latency per lookup<br>on CPU</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">0</span>
+<span class="stat-label">external services required<br>runs entirely in-process</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">40–70%</span>
+<span class="stat-label">cost reduction for<br>support &amp; FAQ workloads</span>
+</div>
+</div>
+
+<hr />
+<p><span class="section-label">Honest hit rates</span></p>
+<p>Semantic caching is not magic. Hit rates depend entirely on how repetitive your workload is.</p>
 <table>
 <thead>
 <tr>
@@ -953,7 +822,7 @@ async frameworks, use <code>await cache.async_warmup()</code> during startup ins
 <tr>
 <td>FAQ / support bot</td>
 <td>40–70%</td>
-<td>High repetition, forgiving similarity</td>
+<td>High prompt repetition, forgiving similarity</td>
 </tr>
 <tr>
 <td>Document summarization</td>
@@ -972,18 +841,16 @@ async frameworks, use <code>await cache.async_warmup()</code> during startup ins
 </tr>
 </tbody>
 </table>
-<h2 id="known-limitations">Known limitations</h2>
+<p>If Recallm doesn't help your workload, the <a href="benchmarks/">benchmarks page</a> will tell you why before you ship it.</p>
+<hr />
+<p><span class="section-label">Known limitations</span></p>
 <ul>
-<li><code>stream=True</code> bypasses the cache entirely</li>
+<li><code>stream=True</code> bypasses the cache entirely — streaming responses are not cacheable in v0.1.0</li>
 <li>Redis backend is not suitable for namespaces &gt; 5,000 entries without partitioning</li>
-<li>Sync callers using <code>RedisStorage</code> have no timeout protection (v0.1.0)</li>
+<li>Sync callers using <code>RedisStorage</code> have no timeout protection in v0.1.0</li>
 </ul>
-<h2 id="next-steps">Next steps</h2>
-<ul>
-<li><a href="getting-started/">Getting started</a> — full walkthrough with <code>cache_context</code> explanation</li>
-<li><a href="configuration/">Configuration</a> — <code>CacheConfig</code> reference and threshold tuning</li>
-<li><a href="storage-backends/">Storage backends</a> — Redis setup and scaling notes</li>
-</ul>
+<hr />
+<p><strong><a href="getting-started/">Getting started</a></strong> · <strong><a href="configuration/">Configuration</a></strong> · <strong><a href="storage-backends/">Storage backends</a></strong> · <strong><a href="https://github.com/munimx/recallm">GitHub</a></strong></p>
 
 
 
