@@ -9,12 +9,20 @@ from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBac
 class InMemoryStorage(StorageBackend):
     """Zero-dependency in-memory storage for SemanticCache.
 
-    Suitable for development, testing, and single-process deployments.
-    Data is lost when the process exits — this is by design.
+    IMPORTANT: Not safe for concurrent use from multiple threads.
+    Concurrent writes from different threads can silently lose entries
+    due to a read-modify-write race in search(): thread A reads the
+    namespace list, thread B appends to it, then thread A overwrites
+    with its live-only list, losing thread B's entry.
 
-    Thread safety: basic dict operations in CPython are GIL-protected, but
-    concurrent writes from multiple threads are not guaranteed to be atomic.
-    For multi-threaded production use, use RedisStorage.
+    This is by design — InMemoryStorage is the development and testing
+    backend. No locking is added because the overhead is inappropriate
+    for a zero-dependency dev backend.
+
+    For multi-threaded or multi-process production deployments, use
+    RedisStorage. For single-threaded async frameworks (FastAPI, etc.),
+    InMemoryStorage is safe — async tasks are cooperative and do not
+    race at the Python level.
     """
 
     def __init__(self) -> None:
