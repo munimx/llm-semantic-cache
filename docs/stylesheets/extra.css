@@ -1,0 +1,361 @@
+/* ============================================================
+   Recallm — Custom theme: dark crimson + soft typography
+   ============================================================ */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+/* ── Color scheme ─────────────────────────────────────────── */
+[data-md-color-scheme="recallm-dark"] {
+  --md-primary-fg-color:        #B71C1C;
+  --md-primary-fg-color--light: #EF9A9A;
+  --md-primary-fg-color--dark:  #7F0000;
+  --md-accent-fg-color:         #FF5252;
+  --md-accent-fg-color--transparent: rgba(255, 82, 82, 0.1);
+
+  --md-default-bg-color:        #111113;
+  --md-default-bg-color--light: #161618;
+  --md-default-bg-color--lighter: #1C1C1F;
+  --md-default-bg-color--lightest: #222226;
+
+  --md-default-fg-color:        #ECEFF4;
+  --md-default-fg-color--light: #A1A1AA;
+  --md-default-fg-color--lighter: #71717A;
+  --md-default-fg-color--lightest: #3F3F46;
+
+  --md-typeset-color:           #ECEFF4;
+  --md-typeset-a-color:         #FF5252;
+  --md-typeset-mark-color:      rgba(183, 28, 28, 0.25);
+
+  --md-code-bg-color:           #1A1A1D;
+  --md-code-fg-color:           #EF9A9A;
+  --md-code-hl-color:           rgba(183, 28, 28, 0.15);
+
+  --md-shadow-z1: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --md-shadow-z2: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --md-shadow-z3: 0 8px 32px rgba(0, 0, 0, 0.7);
+}
+
+[data-md-color-scheme="recallm-light"] {
+  --md-primary-fg-color:        #B71C1C;
+  --md-primary-fg-color--light: #EF9A9A;
+  --md-primary-fg-color--dark:  #7F0000;
+  --md-accent-fg-color:         #C62828;
+  --md-accent-fg-color--transparent: rgba(198, 40, 40, 0.1);
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+:root {
+  --headline-font: "Outfit", sans-serif;
+  --md-text-font:  "Plus Jakarta Sans", sans-serif;
+  --md-code-font:  "JetBrains Mono", "Fira Code", monospace;
+}
+
+body {
+  font-family: var(--md-text-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-family: var(--headline-font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Hero grid layout ─────────────────────────────────────── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+  padding: 4.5rem 0 3rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.hero-eyebrow {
+  font-family: var(--headline-font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #FF5252;
+  opacity: 0.9;
+}
+
+.hero-title {
+  font-family: var(--headline-font);
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin: 0;
+  background: linear-gradient(135deg, #FFFFFF 0%, #C4C4C4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #A1A1AA;
+  max-width: 38ch;
+  margin: 0;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.hero-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #1C1C1F;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-family: var(--md-code-font);
+  font-size: 0.85rem;
+  color: #EF9A9A;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.hero-install:hover {
+  border-color: rgba(183, 28, 28, 0.5);
+  background: #222226;
+}
+
+.hero-install .hero-install-icon {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+/* ── Code panel in hero ───────────────────────────────────── */
+.hero-code-panel {
+  background: #0F0F11;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(183, 28, 28, 0.15);
+}
+
+.hero-code-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: #161618;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hero-code-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.hero-code-dot--red    { background: #FF5F57; }
+.hero-code-dot--yellow { background: #FEBC2E; }
+.hero-code-dot--green  { background: #28C840; }
+
+.hero-code-filename {
+  font-family: var(--md-code-font);
+  font-size: 0.72rem;
+  color: #71717A;
+  margin-left: 0.5rem;
+}
+
+.hero-code-panel pre {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 1.25rem 1.5rem !important;
+  font-size: 0.82rem !important;
+  line-height: 1.6 !important;
+}
+
+/* ── How it works — 3 step cards ─────────────────────────── */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.step-card {
+  background: #161618;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.step-card:hover {
+  border-color: rgba(183, 28, 28, 0.4);
+  transform: translateY(-2px);
+}
+
+.step-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #7F0000, #FF5252);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.step-card:hover::before {
+  opacity: 1;
+}
+
+.step-number {
+  font-family: var(--headline-font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #FF5252;
+  margin-bottom: 0.75rem;
+}
+
+.step-card h3 {
+  font-family: var(--headline-font);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+  color: #ECEFF4;
+}
+
+.step-card p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #A1A1AA;
+  margin: 0;
+}
+
+/* ── Stats strip ──────────────────────────────────────────── */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 2.5rem 0;
+}
+
+.stat-item {
+  background: #161618;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-family: var(--headline-font);
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #FFFFFF;
+  line-height: 1;
+  display: block;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #71717A;
+  margin-top: 0.4rem;
+  line-height: 1.4;
+}
+
+/* ── Hit rates table enhancement ─────────────────────────── */
+.md-typeset .hit-rates-table table {
+  font-size: 0.9rem;
+}
+
+/* ── Section headers ──────────────────────────────────────── */
+.section-label {
+  font-family: var(--headline-font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #FF5252;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* ── Responsive breakpoints ───────────────────────────────── */
+@media screen and (max-width: 960px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding: 3rem 0 2rem;
+  }
+
+  .hero-title {
+    font-size: 2.4rem;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Nav + header refinements ─────────────────────────────── */
+.md-header {
+  background: #0D0D0F;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.md-tabs {
+  background: #0D0D0F;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Admonition accent ────────────────────────────────────── */
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  border-color: #B71C1C;
+}
+
+.md-typeset .note > .admonition-title,
+.md-typeset .note > summary {
+  background-color: rgba(183, 28, 28, 0.1);
+}
+
+/* ── md-button accent ─────────────────────────────────────── */
+.md-typeset .md-button--primary {
+  background: #B71C1C;
+  border-color: #B71C1C;
+  color: #fff;
+}
+
+.md-typeset .md-button--primary:hover {
+  background: #880E0E;
+  border-color: #880E0E;
+}

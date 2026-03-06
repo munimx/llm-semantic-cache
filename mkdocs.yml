@@ -6,19 +6,23 @@ repo_name: munimx/recallm
 
 theme:
   name: material
+  custom_dir: overrides
   palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
+    - scheme: recallm-dark
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
+        name: Switch to light mode
+    - scheme: recallm-light
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Switch to dark mode
+  font:
+    text: Plus Jakarta Sans
+    code: JetBrains Mono
   features:
     - navigation.tabs
     - navigation.sections
@@ -48,3 +52,8 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - tables
+  - attr_list
+  - md_in_html
+
+extra_css:
+  - stylesheets/extra.css
