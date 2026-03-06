@@ -110,7 +110,7 @@ class SemanticCache:
         namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
-            record_stream_bypass()
+            record_stream_bypass(namespace)
             log.info(
                 "cache.stream_bypass",
                 namespace=namespace,
@@ -182,7 +182,7 @@ class SemanticCache:
         namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
 
         if kwargs.get("stream", False):
-            record_stream_bypass()
+            record_stream_bypass(namespace)
             log.info(
                 "cache.stream_bypass",
                 namespace=namespace,

@@ -24,6 +24,7 @@ try:
     _STREAM_BYPASSES = Counter(
         "semantic_cache_stream_bypass_total",
         "Number of stream=True requests that bypassed the cache",
+        ["namespace"],
     )
     _CACHE_ERRORS = Counter(
         "semantic_cache_errors_total",
@@ -82,10 +83,10 @@ def record_miss(namespace: str) -> None:
         _CACHE_MISSES.labels(namespace=namespace).inc()
 
 
-def record_stream_bypass() -> None:
-    """Increment stream bypass counter."""
+def record_stream_bypass(namespace: str) -> None:
+    """Increment stream bypass counter for a namespace."""
     if _PROMETHEUS_AVAILABLE:
-        _STREAM_BYPASSES.inc()
+        _STREAM_BYPASSES.labels(namespace=namespace).inc()
 
 
 def record_cache_error(operation: str) -> None:

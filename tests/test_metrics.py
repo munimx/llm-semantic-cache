@@ -34,7 +34,7 @@ def test_record_miss_does_not_raise() -> None:
 
 
 def test_record_stream_bypass_does_not_raise() -> None:
-    metrics.record_stream_bypass()
+    metrics.record_stream_bypass("test")
 
 
 def test_record_cache_error_does_not_raise() -> None:
@@ -74,5 +74,16 @@ def test_record_miss_increments_counter_when_prometheus_available() -> None:
     counter = metrics._CACHE_MISSES.labels(namespace="metrics-test")
     before = counter._value.get()
     metrics.record_miss("metrics-test")
+    after = counter._value.get()
+    assert after == before + 1
+
+
+def test_record_stream_bypass_increments_counter_with_namespace() -> None:
+    pytest.importorskip("prometheus_client")
+    if not metrics._PROMETHEUS_AVAILABLE:
+        pytest.skip("prometheus metrics are unavailable")
+    counter = metrics._STREAM_BYPASSES.labels(namespace="bypass-test")
+    before = counter._value.get()
+    metrics.record_stream_bypass("bypass-test")
     after = counter._value.get()
     assert after == before + 1
