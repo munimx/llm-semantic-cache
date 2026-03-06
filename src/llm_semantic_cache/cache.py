@@ -114,13 +114,14 @@ class SemanticCache:
             return cached
 
         response = await fn(*args, **kwargs)
-        await self._async_store(
-            prompt_text,
-            embedding,
-            context_hash,
-            namespace,
-            response,
-        )
+        if embedding:
+            await self._async_store(
+                prompt_text,
+                embedding,
+                context_hash,
+                namespace,
+                response,
+            )
 
         record_miss(namespace)
         log.info("cache.miss", namespace=namespace)
@@ -161,13 +162,14 @@ class SemanticCache:
             return cached
 
         response = fn(*args, **kwargs)
-        self._sync_store(
-            prompt_text,
-            embedding,
-            context_hash,
-            namespace,
-            response,
-        )
+        if embedding:
+            self._sync_store(
+                prompt_text,
+                embedding,
+                context_hash,
+                namespace,
+                response,
+            )
 
         record_miss(namespace)
         log.info("cache.miss", namespace=namespace)
