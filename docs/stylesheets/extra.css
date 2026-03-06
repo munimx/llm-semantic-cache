@@ -532,37 +532,112 @@ body {
 [data-md-color-scheme="recallm-dark"] .highlight .nf,
 [data-md-color-scheme="recallm-dark"] .highlight .fm { color: #82AAFF; }
 
-/* ── ISSUE-003: Hide the MkDocs clipboard button inside hero ─
-   Floats over the terminal chrome — remove it entirely.
-   The real install command has its own copy affordance.       ── */
-.hero-code-panel .md-clipboard {
-  display: none !important;
+/* ── Custom copy button (.recallm-copy) — replaces .md-clipboard via JS ─ */
+.recallm-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--md-code-font);
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s, color 0.15s;
+  z-index: 2;
 }
 
-/* ── Clipboard button: match pip-install terminal style ────── */
-.md-clipboard {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 5px !important;
-  color: rgba(255, 255, 255, 0.5) !important;
-  transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+.highlight:hover .recallm-copy,
+.recallm-copy:focus {
+  opacity: 1;
 }
-.md-clipboard:hover {
-  background: rgba(183, 28, 28, 0.25) !important;
-  border-color: rgba(183, 28, 28, 0.55) !important;
-  color: #EF9A9A !important;
+
+.recallm-copy:hover {
+  background: rgba(183, 28, 28, 0.25);
+  border-color: rgba(183, 28, 28, 0.55);
+  color: #EF9A9A;
 }
-/* Light mode clipboard button */
-[data-md-color-scheme="recallm-light"] .md-clipboard {
-  background: rgba(0, 0, 0, 0.05) !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
-  color: rgba(0, 0, 0, 0.4) !important;
+
+.recallm-copy--done {
+  color: #C3E88D !important;
+  border-color: rgba(195, 232, 141, 0.4) !important;
+  opacity: 1 !important;
 }
-[data-md-color-scheme="recallm-light"] .md-clipboard:hover {
-  background: rgba(183, 28, 28, 0.08) !important;
-  border-color: rgba(183, 28, 28, 0.35) !important;
-  color: #B71C1C !important;
+
+/* Ensure the .highlight wrapper is positioned so absolute child works */
+.highlight {
+  position: relative;
 }
+
+/* Light mode copy button */
+[data-md-color-scheme="recallm-light"] .recallm-copy {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.35);
+}
+[data-md-color-scheme="recallm-light"] .recallm-copy:hover {
+  background: rgba(183, 28, 28, 0.1);
+  border-color: rgba(183, 28, 28, 0.4);
+  color: #B71C1C;
+}
+[data-md-color-scheme="recallm-light"] .recallm-copy--done {
+  color: #2e7d32 !important;
+  border-color: rgba(46, 125, 50, 0.4) !important;
+}
+
+/* ── Light mode: code block background & tokens ──────────────── */
+[data-md-color-scheme="recallm-light"] .highlight {
+  background: #f5f2f2 !important;
+}
+[data-md-color-scheme="recallm-light"] .highlight pre,
+[data-md-color-scheme="recallm-light"] .md-typeset pre {
+  background: transparent !important;
+}
+[data-md-color-scheme="recallm-light"] .highlight,
+[data-md-color-scheme="recallm-light"] .highlight code {
+  color: #1a1a1e !important;
+}
+/* Inline code: keep crimson accent on light bg */
+[data-md-color-scheme="recallm-light"] .md-typeset code:not(.highlight code) {
+  background: rgba(183, 28, 28, 0.07) !important;
+  color: #7F0000 !important;
+}
+
+/* ── Light mode Pygments token colors ────────────────────────── */
+[data-md-color-scheme="recallm-light"] .highlight .n,
+[data-md-color-scheme="recallm-light"] .highlight .na,
+[data-md-color-scheme="recallm-light"] .highlight .nd,
+[data-md-color-scheme="recallm-light"] .highlight .ni,
+[data-md-color-scheme="recallm-light"] .highlight .nn,
+[data-md-color-scheme="recallm-light"] .highlight .nv { color: #1a1a1e; }
+[data-md-color-scheme="recallm-light"] .highlight .nc { color: #6A1B9A; }
+[data-md-color-scheme="recallm-light"] .highlight .o,
+[data-md-color-scheme="recallm-light"] .highlight .ow { color: #B71C1C; }
+[data-md-color-scheme="recallm-light"] .highlight .p  { color: #555; }
+[data-md-color-scheme="recallm-light"] .highlight .mi,
+[data-md-color-scheme="recallm-light"] .highlight .mf,
+[data-md-color-scheme="recallm-light"] .highlight .mh { color: #1565C0; }
+[data-md-color-scheme="recallm-light"] .highlight .c,
+[data-md-color-scheme="recallm-light"] .highlight .c1,
+[data-md-color-scheme="recallm-light"] .highlight .cm { color: #607d8b; font-style: italic; }
+[data-md-color-scheme="recallm-light"] .highlight .k,
+[data-md-color-scheme="recallm-light"] .highlight .kn,
+[data-md-color-scheme="recallm-light"] .highlight .kd,
+[data-md-color-scheme="recallm-light"] .highlight .kr { color: #7F0000; font-weight: 600; }
+[data-md-color-scheme="recallm-light"] .highlight .s,
+[data-md-color-scheme="recallm-light"] .highlight .s1,
+[data-md-color-scheme="recallm-light"] .highlight .s2,
+[data-md-color-scheme="recallm-light"] .highlight .sb { color: #2e7d32; }
+[data-md-color-scheme="recallm-light"] .highlight .nb { color: #1565C0; }
+[data-md-color-scheme="recallm-light"] .highlight .nf,
+[data-md-color-scheme="recallm-light"] .highlight .fm { color: #1565C0; }
 
 /* ── ISSUE-004: pip install copy button styling ─────────────── */
 .hero-install {

@@ -43,14 +43,16 @@ create = cache.wrap(client.chat.completions.create)
 # First call — LLM is invoked, result cached
 response = create(
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Capital of France?"}],
+    messages=[{"role": "user",
+               "content": "Capital of France?"}],
     cache_context={"user_id": "u123"},
 )
 
-# Semantically equivalent — cache hit, 0ms LLM latency
+# Semantically equivalent — cache hit, 0ms latency
 response = create(
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "What is the capital of France?"}],
+    messages=[{"role": "user",
+               "content": "What is France's capital?"}],
     cache_context={"user_id": "u123"},
 )
 ```
