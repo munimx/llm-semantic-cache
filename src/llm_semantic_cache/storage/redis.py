@@ -107,36 +107,56 @@ class RedisStorage(StorageBackend):
         ]
         pipe = sync_client.pipeline()
         for entry_id in decoded_ids:
-            pipe.hgetall(_entry_key(entry_id))
+            pipe.hmget(_entry_key(entry_id), *_FILTER_FIELDS)
         results = pipe.execute()
 
-        best_entry: CacheEntry | None = None
-        best_score = -1.0
+        candidate_ids: list[str] = []
+        candidate_embeddings: list[list[float]] = []
         dead_ids: list[str] = []
 
         for entry_id, data in zip(decoded_ids, results):
-            if not data:
+            if data is None or all(value is None for value in data):
                 dead_ids.append(entry_id)
                 continue
 
-            entry = _deserialize_entry(data)
-            if entry.embedding_model_id != embedding_model_id:
+            row = [
+                value.decode() if isinstance(value, bytes) else (value or "")
+                for value in data
+            ]
+            row_data = dict(zip(_FILTER_FIELDS, row))
+            if row_data["embedding_model_id"] != embedding_model_id:
                 continue
-            if entry.context_hash != context_hash:
+            if row_data["context_hash"] != context_hash:
                 continue
-            if entry.is_expired():
-                dead_ids.append(entry_id)
-                continue
-
-            score = cosine_similarity(embedding, entry.embedding)
-            if score >= threshold and score > best_score:
-                best_score = score
-                best_entry = entry
+            ttl_str = row_data["ttl"]
+            created_at_str = row_data["created_at"]
+            if ttl_str and created_at_str:
+                if (time.time() - float(created_at_str)) > float(ttl_str):
+                    dead_ids.append(entry_id)
+                    continue
+            candidate_ids.append(entry_id)
+            candidate_embeddings.append(json.loads(row_data["embedding"]))
 
         if dead_ids:
             sync_client.srem(ns_key, *dead_ids)
 
-        return best_entry
+        if not candidate_ids:
+            return None
+
+        query = np.array(embedding, dtype=np.float64)
+        matrix = np.array(candidate_embeddings, dtype=np.float64)
+        scores = matrix @ query
+        best_idx = int(np.argmax(scores))
+        best_score = float(scores[best_idx])
+        if best_score < threshold:
+            return None
+
+        winner_id = candidate_ids[best_idx]
+        winner_data = sync_client.hgetall(_entry_key(winner_id))
+        if not winner_data:
+            sync_client.srem(ns_key, winner_id)
+            return None
+        return _deserialize_entry(winner_data)
 
     def invalidate_namespace(self, namespace: str) -> int:
         sync_client = self._require_sync_client()
