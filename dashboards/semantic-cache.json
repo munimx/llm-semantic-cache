@@ -1,0 +1,142 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "LLM Semantic Cache operational dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Cache Hit Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rate(semantic_cache_hits_total{namespace=~\"$namespace\"}[5m]) / (rate(semantic_cache_hits_total{namespace=~\"$namespace\"}[5m]) + rate(semantic_cache_misses_total{namespace=~\"$namespace\"}[5m]))",
+          "legendFormat": "Hit Rate"
+        }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Cache Hits/Misses",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(semantic_cache_hits_total{namespace=~\"$namespace\"}[5m])",
+          "legendFormat": "Hits"
+        },
+        {
+          "expr": "rate(semantic_cache_misses_total{namespace=~\"$namespace\"}[5m])",
+          "legendFormat": "Misses"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 }
+    },
+    {
+      "id": 3,
+      "title": "Embedding Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(semantic_cache_embedding_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 latency"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 }
+    },
+    {
+      "id": 4,
+      "title": "Stream Bypass Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(semantic_cache_stream_bypass_total{namespace=~\"$namespace\"}[5m])",
+          "legendFormat": "Stream Bypasses"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 }
+    },
+    {
+      "id": 5,
+      "title": "Cache Errors",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(semantic_cache_errors_total[5m])",
+          "legendFormat": "{{operation}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 }
+    },
+    {
+      "id": 6,
+      "title": "Similarity Score Distribution",
+      "type": "bargauge",
+      "targets": [
+        {
+          "expr": "increase(semantic_cache_similarity_score_bucket[1h])",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 }
+    },
+    {
+      "id": 7,
+      "title": "Namespace Entry Counts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "semantic_cache_namespace_size{namespace=~\"$namespace\"}",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 }
+    },
+    {
+      "id": 8,
+      "title": "Total Cache Entries",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(semantic_cache_namespace_size)",
+          "legendFormat": "Total Entries"
+        }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": ["llm", "semantic-cache", "observability"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": "Prometheus",
+        "definition": "label_values(semantic_cache_hits_total, namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(semantic_cache_hits_total, namespace)",
+        "refresh": 1,
+        "regex": "",
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "LLM Semantic Cache",
+  "uid": "llm-semantic-cache",
+  "version": 1,
+  "weekStart": ""
+}
