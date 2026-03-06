@@ -433,11 +433,16 @@ def test_build_entry_raises_for_unsupported_response(fake_embedder: Any) -> None
         )
 
 
-def test_namespace_size_warning_logged(
+def test_namespace_size_check_uses_time_gate(
     fake_embedder: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     class LargeNamespaceStorage(InMemoryStorage):
+        def __init__(self) -> None:
+            super().__init__()
+            self.size_calls = 0
+
         def namespace_size(self, namespace: str) -> int:
+            self.size_calls += 1
             return 5001
 
     warnings: list[tuple[str, dict[str, Any]]] = []
@@ -445,23 +450,30 @@ def test_namespace_size_warning_logged(
     def capture_warning(event: str, **kwargs: Any) -> None:
         warnings.append((event, kwargs))
 
+    times = iter([100.0, 100.5, 161.0])
+    monkeypatch.setattr("llm_semantic_cache.cache.time.monotonic", lambda: next(times))
     monkeypatch.setattr("llm_semantic_cache.cache.log.warning", capture_warning)
-    monkeypatch.setattr("llm_semantic_cache.cache.random.random", lambda: 0.0)
+    storage = LargeNamespaceStorage()
 
     cache = SemanticCache(
-        storage=LargeNamespaceStorage(),
+        storage=storage,
         config=CacheConfig(threshold=0.85, cache_timeout_seconds=1.0),
         embedder=fake_embedder,
     )
+    assert cache._last_size_check == {}
 
     def create(**_: Any) -> dict[str, Any]:
         return RESPONSE
 
     wrapped = cache.wrap(create)
-    wrapped(messages=MESSAGES, cache_context={}, cache_namespace="ns")
+    wrapped(messages=MESSAGES, cache_context={"i": 1}, cache_namespace="ns")
+    wrapped(messages=MESSAGES, cache_context={"i": 2}, cache_namespace="ns")
+    wrapped(messages=MESSAGES, cache_context={"i": 3}, cache_namespace="ns")
 
     assert warnings
-    assert warnings[0][0] == "cache.namespace_too_large"
+    assert warnings[0][0] == "cache.namespace_large"
+    assert len(warnings) == 2
+    assert storage.size_calls == 2
     assert warnings[0][1]["namespace"] == "ns"
     assert warnings[0][1]["size"] == 5001
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
-import random
+import time
 import uuid
 from collections.abc import Callable
 from typing import Any, Literal
@@ -41,6 +41,7 @@ class SemanticCache:
         self._config = config or CacheConfig()
         self._embedder = embedder or FastEmbedEmbedder(self._config.embedding_model)
         self._threshold = self._config.resolved_threshold()
+        self._last_size_check: dict[str, float] = {}
         # Warm up the embedding model eagerly to prevent cold-start cache bypass.
         # The lazy load on first use can take seconds; we absorb this cost at init time.
         self._embedder.embed("warmup")
@@ -337,11 +338,14 @@ class SemanticCache:
                 self._storage.astore(entry),
                 timeout=self._config.cache_timeout_seconds,
             )
-            if random.random() < 0.01:
+            now = time.monotonic()
+            last = self._last_size_check.get(namespace, 0.0)
+            if now - last > 60.0:
+                self._last_size_check[namespace] = now
                 size = await self._storage.anamespace_size(namespace)
                 if size > LARGE_NAMESPACE_THRESHOLD:
                     log.warning(
-                        "cache.namespace_too_large",
+                        "cache.namespace_large",
                         namespace=namespace,
                         size=size,
                         threshold=LARGE_NAMESPACE_THRESHOLD,
@@ -368,11 +372,14 @@ class SemanticCache:
                 response,
             )
             self._storage.store(entry)
-            if random.random() < 0.01:
+            now = time.monotonic()
+            last = self._last_size_check.get(namespace, 0.0)
+            if now - last > 60.0:
+                self._last_size_check[namespace] = now
                 size = self._storage.namespace_size(namespace)
                 if size > LARGE_NAMESPACE_THRESHOLD:
                     log.warning(
-                        "cache.namespace_too_large",
+                        "cache.namespace_large",
                         namespace=namespace,
                         size=size,
                         threshold=LARGE_NAMESPACE_THRESHOLD,
