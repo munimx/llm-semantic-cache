@@ -42,6 +42,28 @@
   --md-primary-fg-color--dark:  #7F0000;
   --md-accent-fg-color:         #C62828;
   --md-accent-fg-color--transparent: rgba(198, 40, 40, 0.1);
+
+  --md-default-bg-color:           #ffffff;
+  --md-default-bg-color--light:    rgba(0, 0, 0, 0.07);
+  --md-default-bg-color--lighter:  rgba(0, 0, 0, 0.03);
+  --md-default-bg-color--lightest: rgba(0, 0, 0, 0.01);
+
+  --md-default-fg-color:           rgba(0, 0, 0, 0.87);
+  --md-default-fg-color--light:    rgba(0, 0, 0, 0.54);
+  --md-default-fg-color--lighter:  rgba(0, 0, 0, 0.32);
+  --md-default-fg-color--lightest: rgba(0, 0, 0, 0.07);
+
+  --md-typeset-color:              rgba(0, 0, 0, 0.87);
+  --md-typeset-a-color:            #C62828;
+  --md-typeset-mark-color:         rgba(183, 28, 28, 0.2);
+
+  --md-code-bg-color:              #f0f0f0;
+  --md-code-fg-color:              #37474f;
+  --md-code-hl-color:              rgba(183, 28, 28, 0.08);
+
+  --md-shadow-z1: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --md-shadow-z2: 0 4px 16px rgba(0, 0, 0, 0.16);
+  --md-shadow-z3: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 /* ── Typography ───────────────────────────────────────────── */
@@ -402,6 +424,47 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* ── Light mode: red accent text stays red ─────────────────── */
+[data-md-color-scheme="recallm-light"] .hero-eyebrow,
+[data-md-color-scheme="recallm-light"] .section-label,
+[data-md-color-scheme="recallm-light"] .step-number {
+  color: #C62828 !important;
+}
+
+/* ── Light mode: hero terminal chrome adapts ───────────────── */
+[data-md-color-scheme="recallm-light"] .hero-code-panel {
+  background: #e8e8ec;
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(183, 28, 28, 0.12);
+}
+[data-md-color-scheme="recallm-light"] .hero-code-titlebar {
+  background: #d8d8dc;
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+[data-md-color-scheme="recallm-light"] .hero-code-filename {
+  color: #666;
+}
+[data-md-color-scheme="recallm-light"] .hero-code-panel pre {
+  color: #1a1a1e !important;
+}
+
+/* ── Light mode: hero content area ─────────────────────────── */
+[data-md-color-scheme="recallm-light"] .hero-subtitle {
+  color: rgba(0, 0, 0, 0.6);
+}
+[data-md-color-scheme="recallm-light"] .hero-install {
+  background: #f0eeed;
+  border-color: rgba(0, 0, 0, 0.14);
+  color: #7F0000;
+}
+[data-md-color-scheme="recallm-light"] .hero-install:hover {
+  border-color: rgba(183, 28, 28, 0.5);
+  background: #e8e0e0;
+}
+[data-md-color-scheme="recallm-light"] .hero-install .hero-install-icon {
+  color: #B71C1C;
+}
+
 /* ── Responsive breakpoints ───────────────────────────────── */
 @media screen and (max-width: 960px) {
   .hero-grid {
@@ -473,7 +536,32 @@ body {
    Floats over the terminal chrome — remove it entirely.
    The real install command has its own copy affordance.       ── */
 .hero-code-panel .md-clipboard {
-  display: none;
+  display: none !important;
+}
+
+/* ── Clipboard button: match pip-install terminal style ────── */
+.md-clipboard {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 5px !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+}
+.md-clipboard:hover {
+  background: rgba(183, 28, 28, 0.25) !important;
+  border-color: rgba(183, 28, 28, 0.55) !important;
+  color: #EF9A9A !important;
+}
+/* Light mode clipboard button */
+[data-md-color-scheme="recallm-light"] .md-clipboard {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+[data-md-color-scheme="recallm-light"] .md-clipboard:hover {
+  background: rgba(183, 28, 28, 0.08) !important;
+  border-color: rgba(183, 28, 28, 0.35) !important;
+  color: #B71C1C !important;
 }
 
 /* ── ISSUE-004: pip install copy button styling ─────────────── */
