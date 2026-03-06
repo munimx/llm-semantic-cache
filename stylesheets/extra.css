@@ -132,7 +132,9 @@ body {
   font-size: 0.85rem;
   color: #EF9A9A;
   cursor: pointer;
+  user-select: none;
   transition: border-color 0.2s, background 0.2s;
+  text-decoration: none;
 }
 
 .hero-install:hover {
@@ -389,15 +391,15 @@ body {
   border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
-/* ── Light mode: header / tabs ──────────────────────────────── */
+/* ── Light mode: header / tabs — keep dark so white text stays visible ── */
 [data-md-color-scheme="recallm-light"] .md-header {
-  background: #fff;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  background: #1a0505;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 [data-md-color-scheme="recallm-light"] .md-tabs {
-  background: #fafafa;
-  border-bottom-color: rgba(0, 0, 0, 0.08);
+  background: #1a0505;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* ── Responsive breakpoints ───────────────────────────────── */
@@ -432,7 +434,69 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ── Admonition accent ────────────────────────────────────── */
+/* ── ISSUE-002: Dark mode Pygments token overrides ───────────
+   Pygments default colours are light-theme dark-on-white.
+   Our dark background requires inverting uncoloured tokens.   ── */
+[data-md-color-scheme="recallm-dark"] .highlight,
+[data-md-color-scheme="recallm-dark"] .highlight code {
+  color: #ECEFF4;
+}
+[data-md-color-scheme="recallm-dark"] .highlight .n,
+[data-md-color-scheme="recallm-dark"] .highlight .na,
+[data-md-color-scheme="recallm-dark"] .highlight .nd,
+[data-md-color-scheme="recallm-dark"] .highlight .ni,
+[data-md-color-scheme="recallm-dark"] .highlight .nn,
+[data-md-color-scheme="recallm-dark"] .highlight .nv { color: #ECEFF4; }
+[data-md-color-scheme="recallm-dark"] .highlight .nc { color: #FFCB6B; }
+[data-md-color-scheme="recallm-dark"] .highlight .o,
+[data-md-color-scheme="recallm-dark"] .highlight .ow { color: #89DDFF; }
+[data-md-color-scheme="recallm-dark"] .highlight .p  { color: #A1A1AA; }
+[data-md-color-scheme="recallm-dark"] .highlight .mi,
+[data-md-color-scheme="recallm-dark"] .highlight .mf,
+[data-md-color-scheme="recallm-dark"] .highlight .mh { color: #F78C6C; }
+[data-md-color-scheme="recallm-dark"] .highlight .c,
+[data-md-color-scheme="recallm-dark"] .highlight .c1,
+[data-md-color-scheme="recallm-dark"] .highlight .cm { color: #546E7A; font-style: italic; }
+[data-md-color-scheme="recallm-dark"] .highlight .k,
+[data-md-color-scheme="recallm-dark"] .highlight .kn,
+[data-md-color-scheme="recallm-dark"] .highlight .kd,
+[data-md-color-scheme="recallm-dark"] .highlight .kr { color: #C792EA; }
+[data-md-color-scheme="recallm-dark"] .highlight .s,
+[data-md-color-scheme="recallm-dark"] .highlight .s1,
+[data-md-color-scheme="recallm-dark"] .highlight .s2,
+[data-md-color-scheme="recallm-dark"] .highlight .sb { color: #C3E88D; }
+[data-md-color-scheme="recallm-dark"] .highlight .nb { color: #82AAFF; }
+[data-md-color-scheme="recallm-dark"] .highlight .nf,
+[data-md-color-scheme="recallm-dark"] .highlight .fm { color: #82AAFF; }
+
+/* ── ISSUE-003: Hide the MkDocs clipboard button inside hero ─
+   Floats over the terminal chrome — remove it entirely.
+   The real install command has its own copy affordance.       ── */
+.hero-code-panel .md-clipboard {
+  display: none;
+}
+
+/* ── ISSUE-004: pip install copy button styling ─────────────── */
+.hero-install {
+  cursor: pointer;
+  user-select: none;
+}
+
+.hero-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  opacity: 0.45;
+  transition: opacity 0.15s;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.hero-install:hover .hero-copy-btn {
+  opacity: 1;
+}
+
+/* ── Admonition accent ─────────────────────────────────────── */
 .md-typeset .admonition.note,
 .md-typeset details.note {
   border-color: #B71C1C;
