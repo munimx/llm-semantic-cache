@@ -10,8 +10,8 @@ def extract_prompt_text(messages: list[ChatMessage] | list[dict]) -> str | None:
     Accepts either a list of ChatMessage objects or a list of dicts with
     'role' and 'content' keys (raw OpenAI API format).
 
-    Returns the content of the last message with role='user' that has
-    non-empty string content. Returns None if no such message exists.
+    Returns the content of the last non-empty message with role='user'.
+    Iterates in reverse so long conversation histories pay minimal cost.
 
     System prompts and assistant messages are intentionally excluded from
     the embedding. They are part of the context (passed via cache_context),
@@ -19,13 +19,15 @@ def extract_prompt_text(messages: list[ChatMessage] | list[dict]) -> str | None:
     """
     if not messages:
         return None
-    normalized: list[ChatMessage] = []
-    for m in messages:
-        if isinstance(m, dict):
-            normalized.append(ChatMessage(role=m.get("role", ""), content=m.get("content") or ""))
+    for m in reversed(messages):
+        if isinstance(m, ChatMessage):
+            role = m.role
+            content = m.content or ""
+        elif isinstance(m, dict):
+            role = m.get("role", "")
+            content = m.get("content") or ""
         else:
-            normalized.append(m)
-    user_messages = [m for m in normalized if m.role == "user" and m.content and m.content.strip()]
-    if not user_messages:
-        return None
-    return user_messages[-1].content.strip()
+            continue
+        if role == "user" and content.strip():
+            return content.strip()
+    return None
