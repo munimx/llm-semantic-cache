@@ -152,6 +152,7 @@ body {
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(183, 28, 28, 0.15);
+  min-width: 0;
 }
 
 .hero-code-titlebar {
@@ -273,12 +274,13 @@ body {
 
 .stat-number {
   font-family: var(--headline-font);
-  font-size: 2.8rem;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
   font-weight: 700;
   letter-spacing: -0.04em;
   color: #FFFFFF;
   line-height: 1;
   display: block;
+  white-space: nowrap;
 }
 
 .stat-label {
@@ -303,6 +305,31 @@ body {
   color: #FF5252;
   margin-bottom: 0.5rem;
   display: block;
+}
+
+/* ── Expand content area beyond MkDocs' default ~44rem limit ─ */
+.md-content__inner {
+  max-width: 1100px !important;
+}
+
+/* Hero code panel: allow horizontal scroll instead of clipping */
+.hero-code-panel {
+  min-width: 0;
+}
+
+.hero-code-panel pre {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+/* Step cards: prevent word-wrapping from becoming unreadable at mid widths */
+.steps-grid {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+/* Stats: keep numbers on one line at medium widths */
+.stat-number {
+  white-space: nowrap;
 }
 
 /* ── Responsive breakpoints ───────────────────────────────── */
