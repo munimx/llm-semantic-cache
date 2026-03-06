@@ -49,6 +49,36 @@ class SemanticCache:
         # SemanticCache before the event loop starts, or call
         # await asyncio.to_thread(lambda: SemanticCache(...)) from async code.
 
+    def _validate_call_kwargs(
+        self, kwargs: dict[str, Any]
+    ) -> tuple[dict[str, Any], str]:
+        """Extract and validate cache_context and cache_namespace from kwargs.
+
+        Raises ValueError if cache_context is missing.
+        Raises TypeError if cache_context is not a dict or cache_namespace
+        is not a str — these are programmer errors, not runtime failures
+        and are NOT caught by the fail-open handler.
+        """
+        if "cache_context" not in kwargs:
+            raise ValueError(
+                "cache_context is required when calling a cached function. "
+                "Pass cache_context={} explicitly if this request has no additional context."
+            )
+        cache_context = kwargs.pop("cache_context")
+        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
+
+        if not isinstance(cache_context, dict):
+            raise TypeError(
+                f"cache_context must be a dict, got {type(cache_context).__name__!r}. "
+                "Pass a dict with string keys and JSON-serializable values."
+            )
+        if not isinstance(namespace, str):
+            raise TypeError(
+                f"cache_namespace must be a str, got {type(namespace).__name__!r}."
+            )
+
+        return cache_context, namespace
+
     def wrap(
         self,
         fn: Callable[..., Any],
@@ -101,13 +131,7 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Async cache execution path with fail-open and timeout."""
-        if "cache_context" not in kwargs:
-            raise ValueError(
-                "cache_context is required when calling a cached function. "
-                "Pass cache_context={} explicitly if this request has no additional context."
-            )
-        cache_context = kwargs.pop("cache_context")
-        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
+        cache_context, namespace = self._validate_call_kwargs(kwargs)
 
         if kwargs.get("stream", False):
             record_stream_bypass(namespace)
@@ -173,13 +197,7 @@ class SemanticCache:
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
         """Sync cache execution path with fail-open."""
-        if "cache_context" not in kwargs:
-            raise ValueError(
-                "cache_context is required when calling a cached function. "
-                "Pass cache_context={} explicitly if this request has no additional context."
-            )
-        cache_context = kwargs.pop("cache_context")
-        namespace = kwargs.pop("cache_namespace", self._config.default_namespace)
+        cache_context, namespace = self._validate_call_kwargs(kwargs)
 
         if kwargs.get("stream", False):
             record_stream_bypass(namespace)

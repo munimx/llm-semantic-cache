@@ -132,7 +132,7 @@ def test_cache_context_empty_dict_is_valid(fake_embedder: Any) -> None:
     assert wrapped(messages=MESSAGES, cache_context={}) == RESPONSE
 
 
-def test_bad_cache_context_type_fails_open(fake_embedder: Any) -> None:
+def test_unserializable_context_value_fails_open(fake_embedder: Any) -> None:
     cache = make_cache(fake_embedder)
     calls = {"count": 0}
 
@@ -145,6 +145,50 @@ def test_bad_cache_context_type_fails_open(fake_embedder: Any) -> None:
 
     assert response == RESPONSE
     assert calls["count"] == 1
+
+
+def test_non_dict_cache_context_raises_type_error(fake_embedder: Any) -> None:
+    """TypeError for non-dict cache_context must NOT be caught by fail-open."""
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return {"choices": [{"message": {"content": "hi"}}]}
+
+    wrapped = cache.wrap(create)
+    with pytest.raises(TypeError, match="cache_context must be a dict"):
+        wrapped(messages=[{"role": "user", "content": "hello"}], cache_context="not a dict")
+
+
+def test_non_str_cache_namespace_raises_type_error(fake_embedder: Any) -> None:
+    """TypeError for non-str cache_namespace must NOT be caught by fail-open."""
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return {"choices": [{"message": {"content": "hi"}}]}
+
+    wrapped = cache.wrap(create)
+    with pytest.raises(TypeError, match="cache_namespace must be a str"):
+        wrapped(
+            messages=[{"role": "user", "content": "hello"}],
+            cache_context={},
+            cache_namespace=123,
+        )
+
+
+@pytest.mark.asyncio
+async def test_async_non_dict_cache_context_raises_type_error(fake_embedder: Any) -> None:
+    """TypeError for non-dict cache_context must NOT be caught by fail-open in async path."""
+    cache = make_cache(fake_embedder)
+
+    async def create(**_: Any) -> dict[str, Any]:
+        return {"choices": [{"message": {"content": "hi"}}]}
+
+    wrapped = cache.wrap(create)
+    with pytest.raises(TypeError, match="cache_context must be a dict"):
+        await wrapped(
+            messages=[{"role": "user", "content": "hello"}],
+            cache_context=["not", "a", "dict"],
+        )
 
 
 def test_stream_true_bypasses_cache_sync(fake_embedder: Any) -> None:
