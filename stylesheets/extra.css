@@ -333,6 +333,7 @@ body {
   overflow-x: auto !important;
   overflow-y: hidden !important;
   white-space: pre !important;
+  font-size: 0.75rem !important;
 }
 
 /* Step cards: prevent word-wrapping from becoming unreadable at mid widths */
