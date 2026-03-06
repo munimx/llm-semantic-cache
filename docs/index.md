@@ -14,7 +14,7 @@ hide:
 <p class="hero-subtitle">Stop paying for identical prompts. Recallm wraps your OpenAI-compatible client to return instant cached responses for semantically similar queries — no proxy, no infrastructure changes.</p>
 
 <div class="hero-actions">
-<span class="hero-install"><span class="hero-install-icon">$</span> pip install recallm</span>
+<button class="hero-install" onclick="navigator.clipboard.writeText('pip install recallm').then(()=>{var b=this.querySelector('.hero-copy-btn');b.textContent='✓';setTimeout(()=>{b.textContent='⧉'},1500)})"><span class="hero-install-icon">$</span> pip install recallm<span class="hero-copy-btn" title="Copy">⧉</span></button>
 <a href="getting-started/" class="md-button md-button--primary">Get started →</a>
 </div>
 
