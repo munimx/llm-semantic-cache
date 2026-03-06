@@ -38,7 +38,7 @@ def test_chat_completion_request_extra_fields_allowed() -> None:
         messages=[ChatMessage(role="user", content="Q")],
         custom_field="value",
     )
-    assert getattr(request, "custom_field") == "value"
+    assert request.custom_field == "value"
 
 
 def test_chat_completion_response_round_trip_json() -> None:

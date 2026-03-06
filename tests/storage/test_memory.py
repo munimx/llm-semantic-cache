@@ -2,6 +2,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+
 from llm_semantic_cache.storage.memory import InMemoryStorage
 from tests.conftest import make_entry
 

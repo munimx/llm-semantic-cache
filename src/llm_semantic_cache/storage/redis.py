@@ -117,7 +117,7 @@ class RedisStorage(StorageBackend):
         candidate_embeddings: list[list[float]] = []
         dead_ids: list[str] = []
 
-        for entry_id, data in zip(decoded_ids, results):
+        for entry_id, data in zip(decoded_ids, results, strict=False):
             if data is None or all(value is None for value in data):
                 dead_ids.append(entry_id)
                 continue
@@ -126,17 +126,18 @@ class RedisStorage(StorageBackend):
                 value.decode() if isinstance(value, bytes) else (value or "")
                 for value in data
             ]
-            row_data = dict(zip(_FILTER_FIELDS, row))
+            row_data = dict(zip(_FILTER_FIELDS, row, strict=False))
             if row_data["embedding_model_id"] != embedding_model_id:
                 continue
             if row_data["context_hash"] != context_hash:
                 continue
             ttl_str = row_data["ttl"]
             created_at_str = row_data["created_at"]
-            if ttl_str and created_at_str:
-                if (time.time() - float(created_at_str)) > float(ttl_str):
-                    dead_ids.append(entry_id)
-                    continue
+            ttl = float(ttl_str) if ttl_str else None
+            created_at = float(created_at_str) if created_at_str else None
+            if ttl and created_at and (time.time() - created_at) > ttl:
+                dead_ids.append(entry_id)
+                continue
             candidate_ids.append(entry_id)
             candidate_embeddings.append(json.loads(row_data["embedding"]))
 
@@ -240,7 +241,7 @@ class RedisStorage(StorageBackend):
         candidate_embeddings: list[list[float]] = []
         dead_ids: list[str] = []
 
-        for entry_id, data in zip(decoded_ids, results):
+        for entry_id, data in zip(decoded_ids, results, strict=False):
             if data is None or all(value is None for value in data):
                 dead_ids.append(entry_id)
                 continue
@@ -249,7 +250,7 @@ class RedisStorage(StorageBackend):
                 value.decode() if isinstance(value, bytes) else (value or "")
                 for value in data
             ]
-            row_data = dict(zip(_FILTER_FIELDS, row))
+            row_data = dict(zip(_FILTER_FIELDS, row, strict=False))
             if row_data["embedding_model_id"] != embedding_model_id:
                 continue
             if row_data["context_hash"] != context_hash:
@@ -257,10 +258,11 @@ class RedisStorage(StorageBackend):
 
             ttl_str = row_data["ttl"]
             created_at_str = row_data["created_at"]
-            if ttl_str and created_at_str:
-                if (time.time() - float(created_at_str)) > float(ttl_str):
-                    dead_ids.append(entry_id)
-                    continue
+            ttl = float(ttl_str) if ttl_str else None
+            created_at = float(created_at_str) if created_at_str else None
+            if ttl and created_at and (time.time() - created_at) > ttl:
+                dead_ids.append(entry_id)
+                continue
 
             candidate_ids.append(entry_id)
             candidate_embeddings.append(json.loads(row_data["embedding"]))

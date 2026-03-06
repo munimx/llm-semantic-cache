@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 try:
-    from llm_semantic_cache.storage.redis import RedisStorage
+    from llm_semantic_cache.storage.redis import RedisStorage  # noqa: F401
     __all__.append("RedisStorage")
 except ImportError:
     pass

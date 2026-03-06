@@ -51,9 +51,8 @@ def test_measure_embedding_latency_context_manager_does_not_raise() -> None:
 
 
 def test_measure_embedding_latency_does_not_suppress_exceptions() -> None:
-    with pytest.raises(RuntimeError, match="boom"):
-        with metrics.measure_embedding_latency():
-            raise RuntimeError("boom")
+    with pytest.raises(RuntimeError, match="boom"), metrics.measure_embedding_latency():
+        raise RuntimeError("boom")
 
 
 def test_record_hit_increments_counter_when_prometheus_available() -> None:

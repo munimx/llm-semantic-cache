@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 import structlog
 
-from llm_semantic_cache.config import CacheConfig, LARGE_NAMESPACE_THRESHOLD
+from llm_semantic_cache.config import LARGE_NAMESPACE_THRESHOLD, CacheConfig
 from llm_semantic_cache.context import hash_context
 from llm_semantic_cache.embeddings import Embedder, FastEmbedEmbedder
 from llm_semantic_cache.metrics import (
@@ -411,7 +411,7 @@ class SemanticCache:
             raise TypeError(
                 f"Cannot serialize response of type {type(response).__name__!r}. "
                 "SemanticCache expects an OpenAI-compatible response (dict or Pydantic model). "
-                "For non-standard responses, convert to a dict before passing to the cached function."
+                "For non-standard responses, convert to a dict before passing to the cached function."  # noqa: E501
             )
 
         return CacheEntry(
