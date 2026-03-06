@@ -7,7 +7,6 @@ from typing import Any, cast
 
 import numpy as np
 
-from llm_semantic_cache.similarity import cosine_similarity
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBackend
 
 _ENTRY_PREFIX = "llmsc:entry:"
