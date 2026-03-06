@@ -49,7 +49,14 @@ class CacheConfig:
     """Embedding model identifier. Used for model_id tagging on cache entries."""
 
     cache_timeout_seconds: float = 0.05
-    """Hard timeout (seconds) for any single cache operation. On timeout, fail-open."""
+    """Timeout in seconds for cache operations (embed + storage).
+
+    IMPORTANT: This timeout is enforced only in the async path (asyncio.wait_for).
+    Sync callers using RedisStorage have no timeout protection — if Redis is slow
+    or unresponsive, sync calls will block indefinitely. For production use with
+    RedisStorage, use the async path (async def + await) which enforces this timeout.
+    InMemoryStorage is always fast (no I/O) and the timeout is not meaningful there.
+    """
 
     def resolved_threshold(self) -> float:
         """Return the numeric threshold, resolving named profiles."""

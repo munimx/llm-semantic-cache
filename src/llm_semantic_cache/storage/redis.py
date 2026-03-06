@@ -41,6 +41,10 @@ class RedisStorage(StorageBackend):
     Python for cosine similarity computation. Performance degrades when a
     namespace exceeds ~5,000 entries. Use namespace partitioning for larger
     workloads, or wait for a vector-native backend.
+
+    Sync timeout: RedisStorage sync methods (store, search, clear, etc.) have no
+    timeout protection — if Redis is unresponsive, they block indefinitely. Use
+    the async a*() methods in production with SemanticCache.cache_timeout_seconds.
     """
 
     def __init__(self, client: Any, sync_client: Any = None) -> None:
