@@ -159,11 +159,13 @@ async def test_ainvalidate_nonexistent_namespace_returns_zero(redis_storage):
 async def test_aclear_removes_all_entries(redis_storage):
     await redis_storage.astore(make_entry([1.0, 0.0], namespace="a"))
     await redis_storage.astore(make_entry([1.0, 0.0], namespace="b"))
+    await redis_storage.astore(make_entry([1.0, 0.0], namespace="c"))
 
     await redis_storage.aclear()
 
     assert await redis_storage.anamespace_size("a") == 0
     assert await redis_storage.anamespace_size("b") == 0
+    assert await redis_storage.anamespace_size("c") == 0
 
 
 @pytest.mark.asyncio
@@ -225,3 +227,19 @@ def test_sync_methods_raise_without_sync_client():
 
     with pytest.raises(RuntimeError, match="initialized without a sync_client"):
         storage.store(make_entry([1.0, 0.0]))
+
+
+def test_clear_sync_removes_all_entries():
+    async_client = fakeredis.aioredis.FakeRedis()
+    sync_client = fakeredis.FakeRedis()
+    storage = RedisStorage(async_client, sync_client=sync_client)
+
+    storage.store(make_entry([1.0, 0.0], namespace="a"))
+    storage.store(make_entry([1.0, 0.0], namespace="b"))
+    storage.store(make_entry([1.0, 0.0], namespace="c"))
+
+    storage.clear()
+
+    assert storage.namespace_size("a") == 0
+    assert storage.namespace_size("b") == 0
+    assert storage.namespace_size("c") == 0

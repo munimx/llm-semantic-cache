@@ -176,8 +176,13 @@ class RedisStorage(StorageBackend):
         return len(entry_ids)
 
     def clear(self) -> None:
+        """Delete all llmsc:* keys using SCAN to avoid blocking Redis.
+
+        Uses scan_iter() to avoid blocking the Redis event loop, which KEYS
+        would do for large keyspaces.
+        """
         sync_client = self._require_sync_client()
-        keys = sync_client.keys("llmsc:*")
+        keys = list(sync_client.scan_iter(match="llmsc:*", count=100))
         if keys:
             sync_client.delete(*keys)
 
@@ -298,10 +303,18 @@ class RedisStorage(StorageBackend):
         return len(entry_ids)
 
     async def aclear(self) -> None:
-        """Delete all llmsc:* keys. Use with caution in production."""
-        keys = await self._client.keys("llmsc:*")
-        if keys:
-            await self._client.delete(*keys)
+        """Delete all llmsc:* keys using SCAN to avoid blocking Redis.
+
+        Uses SCAN iteration to avoid blocking the Redis event loop, which
+        KEYS would do for large keyspaces.
+        """
+        cursor = 0
+        while True:
+            cursor, keys = await self._client.scan(cursor, match="llmsc:*", count=100)
+            if keys:
+                await self._client.delete(*keys)
+            if cursor == 0:
+                break
 
     async def anamespace_size(self, namespace: str) -> int:
         """Return the number of (potentially live) entries in a namespace."""
