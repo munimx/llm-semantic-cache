@@ -720,7 +720,7 @@
 <div class="hero-grid">
 <div class="hero-content">
 
-<span class="hero-eyebrow">Python Library · MIT License · v0.1.0</span>
+<span class="hero-eyebrow">Python Library · MIT License · v0.2.0</span>
 
 <h1 class="hero-title">Ask once,<br>recall forever.</h1>
 
@@ -847,9 +847,9 @@
 <hr />
 <p><span class="section-label">Known limitations</span></p>
 <ul>
-<li><code>stream=True</code> bypasses the cache entirely — streaming responses are not cacheable in v0.1.0</li>
+<li><code>stream=True</code> bypasses the cache entirely — streaming responses are not cacheable</li>
 <li>Redis backend is not suitable for namespaces &gt; 5,000 entries without partitioning</li>
-<li>Sync callers using <code>RedisStorage</code> have no timeout protection in v0.1.0</li>
+<li>Sync callers using <code>RedisStorage</code> have no timeout protection — rely on the backend client's own behaviour</li>
 </ul>
 <hr />
 <p><strong><a href="getting-started/">Getting started</a></strong> · <strong><a href="configuration/">Configuration</a></strong> · <strong><a href="storage-backends/">Storage backends</a></strong> · <strong><a href="https://github.com/munimx/recallm">GitHub</a></strong></p>
