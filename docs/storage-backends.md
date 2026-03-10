@@ -4,13 +4,28 @@
 
 Use `InMemoryStorage` for development, tests, and single-process single-thread deployments where you want zero dependencies and very low overhead. Do not use it for multi-threaded apps, multi-process workers, or any workload that needs persistence across restarts. It runs numpy-vectorized brute-force cosine search in memory and does no network I/O.
 
+## `ThreadSafeInMemoryStorage`
+
+`ThreadSafeInMemoryStorage` is an RLock-protected drop-in replacement for `InMemoryStorage`. Use it when multiple threads or concurrent async tasks share the same cache instance — for example in FastAPI, Starlette, or any other framework that dispatches requests on a thread pool or an event loop with concurrent coroutines.
+
+```python
+from recallm import CacheConfig, SemanticCache, ThreadSafeInMemoryStorage
+
+cache = SemanticCache(
+    storage=ThreadSafeInMemoryStorage(),
+    config=CacheConfig(threshold="balanced"),
+)
+```
+
+Use `InMemoryStorage` for single-threaded scripts and tests where you want minimal overhead. Use `ThreadSafeInMemoryStorage` everywhere else that stays in-process.
+
 ## `RedisStorage`
 
 For async-first apps, initialize `RedisStorage` with only an async Redis client and use wrapped async callables:
 
 ```python
 import redis.asyncio as redis
-from llm_semantic_cache import RedisStorage
+from recallm import RedisStorage
 
 async_client = redis.Redis(host="localhost", port=6379, decode_responses=False)
 storage = RedisStorage(client=async_client)
@@ -21,7 +36,7 @@ If you need both sync and async call paths, provide `sync_client` too:
 ```python
 import redis
 import redis.asyncio as redis_async
-from llm_semantic_cache import RedisStorage
+from recallm import RedisStorage
 
 async_client = redis_async.Redis(host="localhost", port=6379, decode_responses=False)
 sync_client = redis.Redis(host="localhost", port=6379, decode_responses=False)

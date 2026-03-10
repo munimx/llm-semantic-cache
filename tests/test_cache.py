@@ -7,8 +7,10 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+import structlog
+import structlog.testing
 
-from llm_semantic_cache.cache import SemanticCache
+from llm_semantic_cache.cache import CacheStats, SemanticCache
 from llm_semantic_cache.config import CacheConfig
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult
 from llm_semantic_cache.storage.memory import InMemoryStorage
@@ -584,3 +586,150 @@ async def test_async_warmup_does_not_block(fake_embedder: Any) -> None:
 
     assert inspect.iscoroutinefunction(cache.async_warmup)
     await cache.async_warmup()
+
+
+# ---------------------------------------------------------------------------
+# stats() tests
+# ---------------------------------------------------------------------------
+
+
+def test_stats_zero_request_state(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+    s = cache.stats()
+    assert isinstance(s, CacheStats)
+    assert s.hits == 0
+    assert s.misses == 0
+    assert s.hit_rate == 0.0
+    assert s.avg_similarity == 0.0
+    assert s.namespace_sizes == {}
+
+
+def test_stats_hit_rate_zero_denominator(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+    s = cache.stats()
+    assert s.hit_rate == 0.0
+
+
+def test_stats_counts_misses(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={})
+
+    s = cache.stats()
+    assert s.misses == 1
+    assert s.hits == 0
+    assert s.hit_rate == 0.0
+
+
+def test_stats_counts_hits(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={})  # miss
+    wrapped(messages=MESSAGES, cache_context={})  # hit
+
+    s = cache.stats()
+    assert s.hits == 1
+    assert s.misses == 1
+    assert s.hit_rate == 0.5
+
+
+def test_stats_hit_rate_all_hits(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={})  # miss (stores entry)
+    wrapped(messages=MESSAGES, cache_context={})  # hit
+    wrapped(messages=MESSAGES, cache_context={})  # hit
+
+    s = cache.stats()
+    assert s.hits == 2
+    assert s.misses == 1
+    assert abs(s.hit_rate - 2 / 3) < 1e-9
+
+
+def test_stats_avg_similarity_set_on_hit(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={})  # miss
+    wrapped(messages=MESSAGES, cache_context={})  # hit
+
+    s = cache.stats()
+    assert s.hits == 1
+    assert s.avg_similarity > 0.0  # must be positive for a real hit
+
+
+def test_stats_namespace_sizes_reflected(fake_embedder: Any) -> None:
+    cache = make_cache(fake_embedder)
+
+    def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    wrapped = cache.wrap(create)
+    wrapped(messages=MESSAGES, cache_context={}, cache_namespace="ns-a")
+    wrapped(messages=MESSAGES, cache_context={}, cache_namespace="ns-b")
+
+    s = cache.stats()
+    assert "ns-a" in s.namespace_sizes
+    assert "ns-b" in s.namespace_sizes
+    assert s.namespace_sizes["ns-a"] >= 1
+    assert s.namespace_sizes["ns-b"] >= 1
+
+
+# ---------------------------------------------------------------------------
+# timeout warning tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_async_lookup_timeout_emits_warning(fake_embedder: Any) -> None:
+    """A timed-out cache lookup emits a structlog warning with elapsed_ms/timeout_ms."""
+
+    class SlowSearchStorage(InMemoryStorage):
+        async def asearch(
+            self,
+            embedding: list[float],
+            namespace: str,
+            embedding_model_id: str,
+            context_hash: str,
+            threshold: float,
+        ) -> SearchResult | None:
+            await asyncio.sleep(0.1)
+            return None
+
+    cache = SemanticCache(
+        storage=SlowSearchStorage(),
+        config=CacheConfig(threshold=0.85, cache_timeout_seconds=0.001),
+        embedder=fake_embedder,
+    )
+
+    async def create(**_: Any) -> dict[str, Any]:
+        return RESPONSE
+
+    with structlog.testing.capture_logs() as cap:
+        wrapped = cache.wrap(create)
+        response = await wrapped(messages=MESSAGES, cache_context={})
+
+    assert response == RESPONSE  # fail-open: original fn called
+    warning_events = [e for e in cap if e.get("log_level") == "warning"]
+    assert any(
+        e.get("event") == "cache.timeout_exceeded" for e in warning_events
+    ), f"Expected cache.timeout_exceeded warning, got: {cap}"
+    timeout_event = next(e for e in warning_events if e.get("event") == "cache.timeout_exceeded")
+    assert "elapsed_ms" in timeout_event
+    assert "timeout_ms" in timeout_event
+    assert timeout_event.get("action") == "bypass"

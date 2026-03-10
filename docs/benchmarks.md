@@ -37,19 +37,19 @@ CI benchmarks use a deterministic fake embedder, so hit rates differ from real e
 Swap in a real embedder when constructing `SemanticCache` in benchmark code:
 
 ```python
-from llm_semantic_cache import CacheConfig, SemanticCache
+from recallm import CacheConfig, SemanticCache
 from llm_semantic_cache.embeddings import FastEmbedEmbedder, SentenceTransformerEmbedder
 from llm_semantic_cache.storage.memory import InMemoryStorage
 
 cache_fastembed = SemanticCache(
     storage=InMemoryStorage(),
     config=CacheConfig(threshold="balanced"),
-    embedder=FastEmbedEmbedder("all-MiniLM-L6-v2"),
+    embedder=FastEmbedEmbedder("BAAI/bge-small-en-v1.5"),
 )
 
 cache_torch = SemanticCache(
     storage=InMemoryStorage(),
     config=CacheConfig(threshold="balanced"),
-    embedder=SentenceTransformerEmbedder("all-MiniLM-L6-v2"),
+    embedder=SentenceTransformerEmbedder("BAAI/bge-small-en-v1.5"),
 )
 ```

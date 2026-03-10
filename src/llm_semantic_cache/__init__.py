@@ -1,10 +1,10 @@
 """llm-semantic-cache — semantic caching for OpenAI-compatible LLM APIs."""
 from typing import Any
 
-from llm_semantic_cache.cache import SemanticCache
+from llm_semantic_cache.cache import CacheStats, SemanticCache
 from llm_semantic_cache.config import CacheConfig
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBackend
-from llm_semantic_cache.storage.memory import InMemoryStorage
+from llm_semantic_cache.storage.memory import InMemoryStorage, ThreadSafeInMemoryStorage
 
 CacheContext = dict[str, Any]
 """Type alias for cache context dicts passed to wrapped functions.
@@ -20,11 +20,13 @@ intended as a cache context:
 
 __all__ = [
     "SemanticCache",
+    "CacheStats",
     "CacheConfig",
     "CacheEntry",
     "SearchResult",
     "StorageBackend",
     "InMemoryStorage",
+    "ThreadSafeInMemoryStorage",
     "CacheContext",
 ]
 

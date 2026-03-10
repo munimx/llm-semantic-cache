@@ -36,8 +36,8 @@ def test_cache_config_defaults() -> None:
     assert config.threshold == "balanced"
     assert config.default_namespace == "default"
     assert config.default_ttl is None
-    assert config.embedding_model == "all-MiniLM-L6-v2"
-    assert config.cache_timeout_seconds == 0.05
+    assert config.embedding_model == "BAAI/bge-small-en-v1.5"
+    assert config.cache_timeout_seconds == 0.2
 
 
 def test_cache_config_is_frozen() -> None:

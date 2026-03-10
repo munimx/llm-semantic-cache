@@ -1,9 +1,10 @@
+import threading
 import time
 from unittest.mock import patch
 
 import pytest
 
-from llm_semantic_cache.storage.memory import InMemoryStorage
+from llm_semantic_cache.storage.memory import InMemoryStorage, ThreadSafeInMemoryStorage
 from tests.conftest import make_entry
 
 
@@ -153,3 +154,50 @@ async def test_async_methods_do_not_use_thread_pool(memory_storage: InMemoryStor
     assert result is not None
     assert result.entry is not None
     to_thread.assert_not_called()
+
+
+def test_thread_safe_storage_basic_store_and_search() -> None:
+    storage = ThreadSafeInMemoryStorage()
+    entry = make_entry(embedding=[1.0, 0.0, 0.0])
+    storage.store(entry)
+    result = storage.search([1.0, 0.0, 0.0], "test", "test-model", "abc123", 0.9)
+    assert result is not None
+    assert result.entry is not None
+    assert result.entry.id == entry.id
+
+
+def test_thread_safe_storage_concurrent_writes_no_data_loss() -> None:
+    """Concurrent stores from multiple threads must not lose any entry."""
+    storage = ThreadSafeInMemoryStorage()
+    n_threads = 10
+    entries_per_thread = 20
+    errors: list[Exception] = []
+
+    def write_entries(thread_idx: int) -> None:
+        try:
+            for i in range(entries_per_thread):
+                e = make_entry(
+                    embedding=[float(thread_idx), float(i), 0.0],
+                    prompt_text=f"thread-{thread_idx}-entry-{i}",
+                )
+                storage.store(e)
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=write_entries, args=(i,)) for i in range(n_threads)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors, f"Errors during concurrent writes: {errors}"
+    assert storage.namespace_size("test") == n_threads * entries_per_thread
+
+
+def test_thread_safe_storage_invalidate_namespace() -> None:
+    storage = ThreadSafeInMemoryStorage()
+    storage.store(make_entry([1.0, 0.0, 0.0]))
+    storage.store(make_entry([0.0, 1.0, 0.0]))
+    count = storage.invalidate_namespace("test")
+    assert count == 2
+    assert storage.namespace_size("test") == 0

@@ -7,7 +7,7 @@ Install Recallm with `pip install recallm` for the core package and the default 
 ## Your first cache
 
 ```python
-from llm_semantic_cache import CacheConfig, InMemoryStorage, SemanticCache
+from recallm import CacheConfig, InMemoryStorage, SemanticCache
 
 cache = SemanticCache(
     storage=InMemoryStorage(),
@@ -52,7 +52,7 @@ Use `strict` (`0.97`) for code generation or factual Q&A where false positives a
 ```python
 # Async-only (most common in FastAPI/Starlette)
 import redis.asyncio as redis
-from llm_semantic_cache import RedisStorage, SemanticCache
+from recallm import RedisStorage, SemanticCache
 
 async_client = redis.Redis(host="localhost", port=6379, decode_responses=False)
 cache = SemanticCache(storage=RedisStorage(client=async_client))
@@ -62,7 +62,7 @@ cache = SemanticCache(storage=RedisStorage(client=async_client))
 # Sync + async clients
 import redis
 import redis.asyncio as redis_async
-from llm_semantic_cache import RedisStorage, SemanticCache
+from recallm import RedisStorage, SemanticCache
 
 async_client = redis_async.Redis(host="localhost", port=6379, decode_responses=False)
 sync_client = redis.Redis(host="localhost", port=6379, decode_responses=False)
@@ -70,6 +70,35 @@ cache = SemanticCache(storage=RedisStorage(client=async_client, sync_client=sync
 ```
 
 RedisStorage fetches candidate embeddings into Python for cosine similarity, so performance is best below about 5,000 entries per namespace; above that it still works but lookup latency climbs. Partition large workloads into multiple namespaces (for example by tenant, corpus, or time window) to keep each namespace small.
+
+## Multi-threaded use
+
+`InMemoryStorage` is not thread-safe. For multi-threaded applications or async frameworks that run concurrent tasks sharing the same cache instance, use `ThreadSafeInMemoryStorage` instead — it is an RLock-protected drop-in replacement:
+
+```python
+from recallm import CacheConfig, SemanticCache, ThreadSafeInMemoryStorage
+
+cache = SemanticCache(
+    storage=ThreadSafeInMemoryStorage(),
+    config=CacheConfig(threshold="balanced"),
+)
+```
+
+Use `InMemoryStorage` for single-threaded scripts and tests. Use `ThreadSafeInMemoryStorage` for FastAPI, Starlette, or any other multi-threaded or async framework where multiple coroutines or threads share the same cache object.
+
+## Inspecting cache stats
+
+During development you can call `cache.stats()` to inspect how the cache is behaving:
+
+```python
+stats = cache.stats()
+print(stats.hit_rate)         # fraction of requests served from cache
+print(stats.hits, stats.misses)
+print(stats.avg_similarity)   # mean cosine similarity of hits
+print(stats.namespace_sizes)  # entry counts per namespace
+```
+
+`stats()` returns a `CacheStats` dataclass. It is intended for development and debugging. Use the Prometheus metrics endpoint for production observability.
 
 ## Common mistakes
 
