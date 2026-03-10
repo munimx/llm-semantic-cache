@@ -4,7 +4,7 @@ from typing import Any
 from llm_semantic_cache.cache import SemanticCache
 from llm_semantic_cache.config import CacheConfig
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBackend
-from llm_semantic_cache.storage.memory import InMemoryStorage
+from llm_semantic_cache.storage.memory import InMemoryStorage, ThreadSafeInMemoryStorage
 
 CacheContext = dict[str, Any]
 """Type alias for cache context dicts passed to wrapped functions.
@@ -25,6 +25,7 @@ __all__ = [
     "SearchResult",
     "StorageBackend",
     "InMemoryStorage",
+    "ThreadSafeInMemoryStorage",
     "CacheContext",
 ]
 

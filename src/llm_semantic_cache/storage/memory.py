@@ -1,6 +1,8 @@
 """InMemoryStorage — dict-based storage with numpy-vectorized similarity search."""
 from __future__ import annotations
 
+import threading
+
 import numpy as np
 
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBackend
@@ -125,3 +127,83 @@ class InMemoryStorage(StorageBackend):
 
     async def anamespace_size(self, namespace: str) -> int:
         return self.namespace_size(namespace)
+
+
+class ThreadSafeInMemoryStorage(InMemoryStorage):
+    """Thread-safe variant of InMemoryStorage for concurrent access.
+
+    Uses an RLock to protect all reads and writes. Safe for use in
+    multi-threaded applications (FastAPI with multiple workers, background
+    threads, concurrent test suites).
+
+    Async methods run through asyncio.to_thread() so the lock is acquired
+    inside the thread pool, not on the event loop thread.
+
+    When to use which:
+    - InMemoryStorage: single-threaded scripts, synchronous test suites.
+    - ThreadSafeInMemoryStorage: multi-threaded applications, async frameworks,
+      anything running more than one thread.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._lock = threading.RLock()
+
+    def store(self, entry: CacheEntry) -> None:
+        with self._lock:
+            super().store(entry)
+
+    def search(
+        self,
+        embedding: list[float],
+        namespace: str,
+        embedding_model_id: str,
+        context_hash: str,
+        threshold: float,
+    ) -> SearchResult | None:
+        with self._lock:
+            return super().search(embedding, namespace, embedding_model_id, context_hash, threshold)
+
+    def invalidate_namespace(self, namespace: str) -> int:
+        with self._lock:
+            return super().invalidate_namespace(namespace)
+
+    def clear(self) -> None:
+        with self._lock:
+            super().clear()
+
+    def namespace_size(self, namespace: str) -> int:
+        with self._lock:
+            return super().namespace_size(namespace)
+
+    # Async methods delegate to asyncio.to_thread (not InMemoryStorage's direct-call
+    # shortcuts) so the lock is acquired inside a worker thread, not the event loop.
+
+    async def astore(self, entry: CacheEntry) -> None:
+        import asyncio
+        await asyncio.to_thread(self.store, entry)
+
+    async def asearch(
+        self,
+        embedding: list[float],
+        namespace: str,
+        embedding_model_id: str,
+        context_hash: str,
+        threshold: float,
+    ) -> SearchResult | None:
+        import asyncio
+        return await asyncio.to_thread(
+            self.search, embedding, namespace, embedding_model_id, context_hash, threshold
+        )
+
+    async def ainvalidate_namespace(self, namespace: str) -> int:
+        import asyncio
+        return await asyncio.to_thread(self.invalidate_namespace, namespace)
+
+    async def aclear(self) -> None:
+        import asyncio
+        await asyncio.to_thread(self.clear)
+
+    async def anamespace_size(self, namespace: str) -> int:
+        import asyncio
+        return await asyncio.to_thread(self.namespace_size, namespace)
