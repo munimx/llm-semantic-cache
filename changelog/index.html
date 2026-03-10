@@ -712,6 +712,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#020-2026-03-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.0] — 2026-03-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.0] — 2026-03-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010-2026-03-06" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -724,7 +763,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -774,6 +813,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#020-2026-03-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.2.0] — 2026-03-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.2.0] — 2026-03-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010-2026-03-06" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -786,7 +864,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -824,8 +902,21 @@
 <h1 id="changelog">Changelog</h1>
 <p>All notable changes to Recallm will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>.</p>
-<h2 id="010-2026-03-06">[0.1.0] — 2026-03-06</h2>
+<h2 id="020-2026-03-10">[0.2.0] — 2026-03-10</h2>
 <h3 id="added">Added</h3>
+<ul>
+<li><code>SemanticCache.stats()</code> returns a <code>CacheStats</code> dataclass with <code>hits</code>, <code>misses</code>, <code>hit_rate</code>, <code>avg_similarity</code>, and <code>namespace_sizes</code> for development-time visibility into cache behaviour</li>
+<li><code>ThreadSafeInMemoryStorage</code> — RLock-protected drop-in replacement for <code>InMemoryStorage</code>, safe for multi-threaded and async-framework use</li>
+<li><code>recallm</code> top-level package: <code>pip install recallm</code> now maps directly to <code>from recallm import ...</code>, eliminating the install/import name mismatch</li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li>Default embedding model changed from <code>all-MiniLM-L6-v2</code> to <code>BAAI/bge-small-en-v1.5</code> for improved first-run reliability</li>
+<li>Default <code>cache_timeout_seconds</code> raised from <code>0.05</code> to <code>0.2</code> (200 ms) to reduce silent cold-start bypasses</li>
+<li>Cache timeout now emits a structlog <code>warning</code> (<code>cache.timeout_exceeded</code>) with <code>elapsed_ms</code>, <code>timeout_ms</code>, and <code>action=bypass</code> instead of a silent error</li>
+</ul>
+<h2 id="010-2026-03-06">[0.1.0] — 2026-03-06</h2>
+<h3 id="added_1">Added</h3>
 <ul>
 <li><code>SemanticCache.wrap()</code> with sync and async support</li>
 <li><code>InMemoryStorage</code> — zero-dependency in-process backend</li>
