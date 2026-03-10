@@ -7,7 +7,7 @@ hide:
 <div class="hero-grid">
 <div class="hero-content">
 
-<span class="hero-eyebrow">Python Library · MIT License · v0.1.0</span>
+<span class="hero-eyebrow">Python Library · MIT License · v0.2.0</span>
 
 <h1 class="hero-title">Ask once,<br>recall forever.</h1>
 
@@ -120,9 +120,9 @@ If Recallm doesn't help your workload, the [benchmarks page](benchmarks.md) will
 
 <span class="section-label">Known limitations</span>
 
-- `stream=True` bypasses the cache entirely — streaming responses are not cacheable in v0.1.0
+- `stream=True` bypasses the cache entirely — streaming responses are not cacheable
 - Redis backend is not suitable for namespaces > 5,000 entries without partitioning
-- Sync callers using `RedisStorage` have no timeout protection in v0.1.0
+- Sync callers using `RedisStorage` have no timeout protection — rely on the backend client's own behaviour
 
 ---
 
