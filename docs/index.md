@@ -29,7 +29,7 @@ hide:
 
 ```python
 from openai import OpenAI
-from llm_semantic_cache import (
+from recallm import (
     SemanticCache, CacheConfig, InMemoryStorage
 )
 

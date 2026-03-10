@@ -8,7 +8,7 @@
 | `default_namespace` | `str` | `"default"` | Namespace used when `cache_namespace` is not passed |
 | `default_ttl` | `float \| None` | `None` | Time-to-live in seconds. None = no expiration |
 | `embedding_model` | `str` | `"BAAI/bge-small-en-v1.5"` | Embedding model identifier used for tagging cache entries. Must match the configured embedder's `model_id` |
-| `cache_timeout_seconds` | `float` | `0.05` | Timeout for cache operations (async path only) |
+| `cache_timeout_seconds` | `float` | `0.2` | Timeout for cache operations (async path only). On timeout, a structlog `warning` (`cache.timeout_exceeded`) is emitted with `elapsed_ms`, `timeout_ms`, and `action=bypass` |
 
 ## Threshold profiles
 
@@ -18,7 +18,7 @@
 
 ## `cache_timeout_seconds`
 
-In async mode, cache lookup/store operations run with a hard timeout and fail open if they exceed `cache_timeout_seconds`, which means your wrapped function is still called and your app keeps serving responses. In v0.1.0 this timeout protection only applies to async code paths; sync callers (including sync `RedisStorage` usage) have no timeout guard and rely on the backend client's own behavior.
+In async mode, cache lookup/store operations run with a hard timeout and fail open if they exceed `cache_timeout_seconds`, which means your wrapped function is still called and your app keeps serving responses. When a timeout occurs, Recallm emits a structlog `warning` event (`cache.timeout_exceeded`) with `elapsed_ms`, `timeout_ms`, and `action=bypass` so you can track cold-start bypasses in your log aggregator. In v0.1.0 this timeout protection only applies to async code paths; sync callers (including sync `RedisStorage` usage) have no timeout guard and rely on the backend client's own behavior.
 
 ## `default_ttl`
 

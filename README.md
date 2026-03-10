@@ -13,10 +13,20 @@ pip install "recallm[redis]"   # persistent cache, shared across workers
 pip install "recallm[torch]"   # sentence-transformers embedder (700MB, PyTorch)
 ```
 
-## Quickstart
+Once installed, import directly from the `recallm` package:
 
 ```python
-from llm_semantic_cache import CacheConfig, InMemoryStorage, SemanticCache
+from recallm import SemanticCache, CacheConfig, InMemoryStorage
+```
+
+## Quickstart
+
+```bash
+pip install recallm
+```
+
+```python
+from recallm import CacheConfig, InMemoryStorage, SemanticCache
 
 storage = InMemoryStorage()
 cache = SemanticCache(storage=storage, config=CacheConfig(threshold="balanced"))
@@ -36,6 +46,20 @@ first = cached(**request)   # miss: calls fake_llm and stores response
 second = cached(**request)  # hit: returns cached response
 print(first["choices"][0]["message"]["content"], second["choices"][0]["message"]["content"])
 ```
+
+## Debugging
+
+Inspect cache behaviour during development with `cache.stats()`:
+
+```python
+stats = cache.stats()
+print(stats.hit_rate)         # fraction of requests served from cache
+print(stats.hits, stats.misses)
+print(stats.avg_similarity)   # mean cosine similarity of cache hits
+print(stats.namespace_sizes)  # entry counts per namespace
+```
+
+`stats()` returns a `CacheStats` dataclass and is intended for development and debugging. Use the Prometheus metrics for production observability.
 
 > **Deployment note:** `SemanticCache(...)` loads the embedding model synchronously.
 > In async frameworks (FastAPI, etc.), use `await cache.async_warmup()` during startup
