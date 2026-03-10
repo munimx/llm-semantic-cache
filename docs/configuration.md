@@ -7,7 +7,7 @@
 | `threshold` | `str \| float` | `"balanced"` | Named profile (`"strict"`, `"balanced"`, `"loose"`) or raw cosine similarity in [0.0, 1.0] |
 | `default_namespace` | `str` | `"default"` | Namespace used when `cache_namespace` is not passed |
 | `default_ttl` | `float \| None` | `None` | Time-to-live in seconds. None = no expiration |
-| `embedding_model` | `str` | `"all-MiniLM-L6-v2"` | Embedding model identifier used for tagging cache entries. Must match the configured embedder's `model_id` |
+| `embedding_model` | `str` | `"BAAI/bge-small-en-v1.5"` | Embedding model identifier used for tagging cache entries. Must match the configured embedder's `model_id` |
 | `cache_timeout_seconds` | `float` | `0.05` | Timeout for cache operations (async path only) |
 
 ## Threshold profiles

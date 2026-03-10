@@ -44,12 +44,12 @@ from llm_semantic_cache.storage.memory import InMemoryStorage
 cache_fastembed = SemanticCache(
     storage=InMemoryStorage(),
     config=CacheConfig(threshold="balanced"),
-    embedder=FastEmbedEmbedder("all-MiniLM-L6-v2"),
+    embedder=FastEmbedEmbedder("BAAI/bge-small-en-v1.5"),
 )
 
 cache_torch = SemanticCache(
     storage=InMemoryStorage(),
     config=CacheConfig(threshold="balanced"),
-    embedder=SentenceTransformerEmbedder("all-MiniLM-L6-v2"),
+    embedder=SentenceTransformerEmbedder("BAAI/bge-small-en-v1.5"),
 )
 ```

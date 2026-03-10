@@ -64,7 +64,7 @@ The library is a **thin wrapper**. Every component should be understandable by r
 
 ### 1. Local Embeddings (No External Dependency)
 
-- Use `all-MiniLM-L6-v2` via `sentence-transformers`, running **in-process**
+- Use `BAAI/bge-small-en-v1.5` via `sentence-transformers`, running **in-process**
 - No calls to any embedding API — that would defeat the purpose
 - Target: sub-10ms on CPU for typical prompt lengths, ~80MB model size
 - The embedding model must be swappable — users can override the default
@@ -283,3 +283,90 @@ Users may deploy the library on workloads with low natural repetition and conclu
 Early development. This is the first clean iteration of this library with a correct, focused scope.
 
 The project is framed as a learning artifact as well as a useful tool. Every component should be understandable end-to-end by a competent engineer reading it cold.
+
+---
+
+## Addendum 3 — Five Concrete Improvements (Binding)
+
+The following five items were identified in code review and are binding for implementation. They are ordered by severity.
+
+### 1. Fix the Default Embedding Model (Critical)
+
+**Problem:** `BAAI/bge-small-en-v1.5` fails on first use due to availability issues on the default HuggingFace mirror path. A new user who has not pre-cached the model hits an error before writing a single line of application code.
+
+**Resolution:**
+- Change the default embedding model to `BAAI/bge-small-en-v1.5`. It is consistently available, fast on CPU (sub-10ms for typical prompt lengths), and approximately the same model size (~80MB).
+- Update `AGENTS.md`, the README, and all references to `BAAI/bge-small-en-v1.5` in source, tests, and documentation.
+- The first-run experience must work without any manual model download step. If model download is required, it must happen transparently with a structlog `info` event explaining what is happening.
+- The embedding model remains swappable — this changes only the default, not the interface.
+
+**Non-goal:** Do not add auto-retry logic or a fallback model chain. One working default is correct; two defaults with fallback logic is complexity that obscures failures.
+
+---
+
+### 2. Fix the Package / Import Name Mismatch (Critical)
+
+**Problem:** The installable package is named `recallm` (`pip install recallm`) but the import is `import llm_semantic_cache`. This disconnect is discovered by trial and error, not by reading the README. It is a first-impression failure.
+
+**Resolution — choose one and document it:**
+
+**Option A (preferred):** Rename the PyPI package to `llm-semantic-cache` so that `pip install llm-semantic-cache` → `import llm_semantic_cache` is a 1:1 match.
+
+**Option B:** Keep `recallm` as the PyPI name and add a `recallm` shim module at the top level that re-exports everything from `llm_semantic_cache` with a `DeprecationWarning`. This preserves any existing installs.
+
+Whichever option is chosen:
+- The README must show the install command and the import on adjacent lines, making the mapping explicit.
+- The mismatch must never exist again — this is a naming convention rule, not a one-time fix.
+
+---
+
+### 3. Add `cache.stats()` (High Value)
+
+**Problem:** There is no way to inspect cache behavior during development or debugging without wiring up Prometheus. Developers flying blind on hit rates and similarity distributions during integration work reach for logs instead, which is slower and less structured.
+
+**Resolution:**
+- Add a `stats()` method to `SemanticCache` returning a `CacheStats` dataclass (not a raw dict — typed).
+- `CacheStats` fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `hits` | `int` | Total cache hits since instantiation |
+| `misses` | `int` | Total cache misses since instantiation |
+| `hit_rate` | `float` | `hits / (hits + misses)`, or `0.0` if no requests yet |
+| `avg_similarity` | `float` | Rolling mean of similarity scores on hits |
+| `namespace_sizes` | `dict[str, int]` | Entry count per namespace |
+
+- Counters are instance-level, reset on instantiation, not persisted to storage.
+- `stats()` is a synchronous method on the `SemanticCache` class — no async variant needed.
+- Prometheus metrics remain the production observability path. `stats()` is explicitly for development and debugging. Document this distinction clearly.
+- Add unit tests covering: zero-request state, hit/miss counting, hit rate calculation edge case (zero denominator), and namespace size reflection.
+
+---
+
+### 4. Raise (and Make Configurable) the Cache Operation Timeout (Correctness)
+
+**Problem:** The current 50ms timeout on cache operations (embedding + storage lookup) is too short. On a cold model load or slower hardware, the operation silently exceeds the timeout and the cache is bypassed with no warning. The developer observes zero cache hits and has no diagnostic signal — the behavior they expected is not what they get.
+
+**Resolution:**
+- Change the default timeout to `200ms`.
+- Expose the timeout as a named configuration parameter on `SemanticCache` (e.g., `cache_timeout_ms: int = 200`). This lives in the single configuration layer, not as a magic number in `wrap()`.
+- When a cache operation exceeds the timeout and is bypassed, emit a structlog `warning` event that includes the actual elapsed latency and the configured timeout. Example: `cache_timeout_exceeded: elapsed_ms=187 timeout_ms=200 action=bypass`.
+- Add a unit test that sets a very short timeout (e.g., 1ms), verifies the bypass occurs, and verifies the warning is emitted.
+
+**Non-goal:** Do not add adaptive timeout logic. A fixed, configurable value with a clear warning is correct. Adaptive logic hides the problem.
+
+---
+
+### 5. Add `ThreadSafeInMemoryStorage` (Completeness)
+
+**Problem:** `InMemoryStorage` has no locking. Any application that adds a second thread (e.g., FastAPI with multiple workers, a background refresh task) can corrupt the in-memory store silently. Users are currently forced to switch to Redis the moment they add concurrency, even for development workloads.
+
+**Resolution:**
+- Add `ThreadSafeInMemoryStorage` in `storage/memory.py` (same file, separate class — no new file needed for ~10 lines of code).
+- Implementation: subclass `InMemoryStorage`, acquire an `RLock` around every method that mutates or reads shared state (`store`, `search`, `invalidate_namespace`).
+- `ThreadSafeInMemoryStorage` is a drop-in replacement — it satisfies the same `StorageBackend` ABC.
+- For async methods, the `RLock` wraps the synchronous inner call inside `run_in_executor` (inheriting the default async behavior from the ABC).
+- Document when to use which variant:
+  - `InMemoryStorage` — single-threaded scripts, synchronous test suites.
+  - `ThreadSafeInMemoryStorage` — multi-threaded applications, async frameworks, anything running more than one thread.
+- Add unit tests covering concurrent writes from multiple threads and verifying no data loss or corruption.

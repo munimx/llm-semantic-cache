@@ -45,7 +45,7 @@ class CacheConfig:
     default_ttl: float | None = None
     """Default TTL in seconds for cache entries. None means no expiration."""
 
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
     """Embedding model identifier. Used for model_id tagging on cache entries."""
 
     cache_timeout_seconds: float = 0.05

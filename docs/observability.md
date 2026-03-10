@@ -47,17 +47,17 @@ Use `$namespace` to filter all panels to one or more namespaces or view aggregat
 Console (development):
 
 ```text
-2026-01-01T12:00:00Z [info     ] cache.hit namespace=default best_score=0.96 threshold=0.92 embedding_model=all-MiniLM-L6-v2
-2026-01-01T12:00:02Z [info     ] cache.miss namespace=default best_score=0.81 threshold=0.92 embedding_model=all-MiniLM-L6-v2
-2026-01-01T12:00:03Z [info     ] cache.stream_bypass namespace=default embedding_model=all-MiniLM-L6-v2
+2026-01-01T12:00:00Z [info     ] cache.hit namespace=default best_score=0.96 threshold=0.92 embedding_model=BAAI/bge-small-en-v1.5
+2026-01-01T12:00:02Z [info     ] cache.miss namespace=default best_score=0.81 threshold=0.92 embedding_model=BAAI/bge-small-en-v1.5
+2026-01-01T12:00:03Z [info     ] cache.stream_bypass namespace=default embedding_model=BAAI/bge-small-en-v1.5
 2026-01-01T12:00:04Z [error    ] cache.lookup_failed namespace=default error='redis timeout'
 ```
 
 JSON (production):
 
 ```json
-{"event":"cache.hit","level":"info","namespace":"default","best_score":0.96,"threshold":0.92,"embedding_model":"all-MiniLM-L6-v2","timestamp":"2026-01-01T12:00:00Z"}
-{"event":"cache.miss","level":"info","namespace":"default","best_score":0.81,"threshold":0.92,"embedding_model":"all-MiniLM-L6-v2","timestamp":"2026-01-01T12:00:02Z"}
-{"event":"cache.stream_bypass","level":"info","namespace":"default","embedding_model":"all-MiniLM-L6-v2","timestamp":"2026-01-01T12:00:03Z"}
+{"event":"cache.hit","level":"info","namespace":"default","best_score":0.96,"threshold":0.92,"embedding_model":"BAAI/bge-small-en-v1.5","timestamp":"2026-01-01T12:00:00Z"}
+{"event":"cache.miss","level":"info","namespace":"default","best_score":0.81,"threshold":0.92,"embedding_model":"BAAI/bge-small-en-v1.5","timestamp":"2026-01-01T12:00:02Z"}
+{"event":"cache.stream_bypass","level":"info","namespace":"default","embedding_model":"BAAI/bge-small-en-v1.5","timestamp":"2026-01-01T12:00:03Z"}
 {"event":"cache.lookup_failed","level":"error","namespace":"default","error":"redis timeout","timestamp":"2026-01-01T12:00:04Z"}
 ```

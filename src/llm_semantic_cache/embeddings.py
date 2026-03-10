@@ -43,14 +43,14 @@ def _l2_normalize(vector: list[float]) -> list[float]:
 class FastEmbedEmbedder:
     """Default embedder using fastembed (ONNX-based, ~20MB install).
 
-    Uses all-MiniLM-L6-v2 by default. The model is loaded lazily on the
+    Uses BAAI/bge-small-en-v1.5 by default. The model is loaded lazily on the
     first call to embed() — not at initialization time.
 
     fastembed is ~20MB vs ~700MB for sentence-transformers/torch. It is the
     recommended embedder for production deployments.
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5") -> None:
         self._model_name = model_name
         self._model: object | None = None
         self._lock = threading.Lock()
@@ -88,10 +88,10 @@ class SentenceTransformerEmbedder:
 
     Requires: pip install 'llm-semantic-cache[torch]'
 
-    Uses all-MiniLM-L6-v2 by default. Model loads lazily on first embed().
+    Uses BAAI/bge-small-en-v1.5 by default. Model loads lazily on first embed().
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5") -> None:
         self._model_name = model_name
         self._model: object | None = None
         self._lock = threading.Lock()
