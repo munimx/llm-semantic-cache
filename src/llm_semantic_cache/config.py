@@ -48,14 +48,18 @@ class CacheConfig:
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     """Embedding model identifier. Used for model_id tagging on cache entries."""
 
-    cache_timeout_seconds: float = 0.05
-    """Timeout in seconds for cache operations (embed + storage).
+    cache_timeout_seconds: float = 0.2
+    """Timeout in seconds for cache operations (embed + storage lookup).
 
     IMPORTANT: This timeout is enforced only in the async path (asyncio.wait_for).
     Sync callers using RedisStorage have no timeout protection — if Redis is slow
     or unresponsive, sync calls will block indefinitely. For production use with
     RedisStorage, use the async path (async def + await) which enforces this timeout.
     InMemoryStorage is always fast (no I/O) and the timeout is not meaningful there.
+
+    When a cache operation exceeds this timeout, the operation is bypassed and the
+    original function is called directly. A structlog warning is emitted with
+    elapsed_ms, timeout_ms, and action=bypass so you can diagnose the issue.
     """
 
     def resolved_threshold(self) -> float:
