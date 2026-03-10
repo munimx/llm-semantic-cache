@@ -12,19 +12,23 @@ from llm_semantic_cache import (
     CacheConfig,
     CacheContext,
     CacheEntry,
+    CacheStats,
     InMemoryStorage,
     SearchResult,
     SemanticCache,
     StorageBackend,
+    ThreadSafeInMemoryStorage,
 )
 
 __all__ = [
     "SemanticCache",
+    "CacheStats",
     "CacheConfig",
     "CacheEntry",
     "SearchResult",
     "StorageBackend",
     "InMemoryStorage",
+    "ThreadSafeInMemoryStorage",
     "CacheContext",
 ]
 

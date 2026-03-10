@@ -1,7 +1,7 @@
 """llm-semantic-cache — semantic caching for OpenAI-compatible LLM APIs."""
 from typing import Any
 
-from llm_semantic_cache.cache import SemanticCache
+from llm_semantic_cache.cache import CacheStats, SemanticCache
 from llm_semantic_cache.config import CacheConfig
 from llm_semantic_cache.storage.base import CacheEntry, SearchResult, StorageBackend
 from llm_semantic_cache.storage.memory import InMemoryStorage, ThreadSafeInMemoryStorage
@@ -20,6 +20,7 @@ intended as a cache context:
 
 __all__ = [
     "SemanticCache",
+    "CacheStats",
     "CacheConfig",
     "CacheEntry",
     "SearchResult",

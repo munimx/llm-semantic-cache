@@ -7,6 +7,7 @@ import inspect
 import time
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 import structlog
@@ -28,6 +29,31 @@ from llm_semantic_cache.storage.base import CacheEntry, StorageBackend
 log = structlog.get_logger(__name__)
 
 
+@dataclass
+class CacheStats:
+    """Snapshot of cache performance since the SemanticCache was instantiated.
+
+    Intended for development and debugging — inspect hit rates and similarity
+    distributions without wiring up Prometheus. For production observability,
+    use the Prometheus metrics emitted alongside these counters.
+    """
+
+    hits: int
+    """Total cache hits since instantiation."""
+
+    misses: int
+    """Total cache misses since instantiation."""
+
+    hit_rate: float
+    """hits / (hits + misses). Returns 0.0 when no requests have been made yet."""
+
+    avg_similarity: float
+    """Rolling mean of cosine similarity scores on cache hits. Returns 0.0 when no hits yet."""
+
+    namespace_sizes: dict[str, int] = field(default_factory=dict)
+    """Live entry count per namespace, reflecting current storage state."""
+
+
 class SemanticCache:
     """Adds semantic caching to any OpenAI-compatible callable."""
 
@@ -42,6 +68,11 @@ class SemanticCache:
         self._embedder = embedder or FastEmbedEmbedder(self._config.embedding_model)
         self._threshold = self._config.resolved_threshold()
         self._last_size_check: dict[str, float] = {}
+        self._hits: int = 0
+        self._misses: int = 0
+        self._similarity_sum: float = 0.0
+        self._similarity_hit_count: int = 0
+        self._touched_namespaces: set[str] = set()
         # Warm up the embedding model eagerly to prevent cold-start cache bypass.
         # The lazy load on first use can take seconds; we absorb this cost at init time.
         self._embedder.embed("warmup")
@@ -98,6 +129,31 @@ class SemanticCache:
     async def ainvalidate_namespace(self, namespace: str) -> int:
         """Async version of invalidate_namespace()."""
         return await self._storage.ainvalidate_namespace(namespace)
+
+    def stats(self) -> CacheStats:
+        """Return a snapshot of cache performance since instantiation.
+
+        Counters are instance-level and reset when the SemanticCache is
+        recreated. They are not persisted to storage. Use Prometheus metrics
+        for production monitoring; this method is for development and debugging.
+        """
+        total = self._hits + self._misses
+        hit_rate = self._hits / total if total > 0 else 0.0
+        avg_similarity = (
+            self._similarity_sum / self._similarity_hit_count
+            if self._similarity_hit_count > 0
+            else 0.0
+        )
+        namespace_sizes = {
+            ns: self._storage.namespace_size(ns) for ns in self._touched_namespaces
+        }
+        return CacheStats(
+            hits=self._hits,
+            misses=self._misses,
+            hit_rate=hit_rate,
+            avg_similarity=avg_similarity,
+            namespace_sizes=namespace_sizes,
+        )
 
     async def async_warmup(self) -> None:
         """Warm up the embedding model without blocking the event loop.
@@ -161,9 +217,13 @@ class SemanticCache:
         embedding, cached, best_score = await self._async_lookup(
             prompt_text, namespace, context_hash
         )
+        self._touched_namespaces.add(namespace)
         if best_score is not None:
             record_similarity_score(best_score)
         if cached is not None:
+            self._hits += 1
+            self._similarity_sum += best_score  # best_score is not None when cached is not None
+            self._similarity_hit_count += 1
             record_hit(namespace)
             log.info(
                 "cache.hit",
@@ -184,6 +244,7 @@ class SemanticCache:
                 response,
             )
 
+        self._misses += 1
         record_miss(namespace)
         log.info(
             "cache.miss",
@@ -225,9 +286,13 @@ class SemanticCache:
             return fn(*args, **kwargs)
 
         embedding, cached, best_score = self._sync_lookup(prompt_text, namespace, context_hash)
+        self._touched_namespaces.add(namespace)
         if best_score is not None:
             record_similarity_score(best_score)
         if cached is not None:
+            self._hits += 1
+            self._similarity_sum += best_score  # best_score is not None when cached is not None
+            self._similarity_hit_count += 1
             record_hit(namespace)
             log.info(
                 "cache.hit",
@@ -248,6 +313,7 @@ class SemanticCache:
                 response,
             )
 
+        self._misses += 1
         record_miss(namespace)
         log.info(
             "cache.miss",
@@ -270,6 +336,7 @@ class SemanticCache:
             log.error("cache.embed_failed", error=str(exc), namespace=namespace)
             return [], None, None
         try:
+            op_start = time.perf_counter()
             result = await asyncio.wait_for(
                 self._storage.asearch(
                     embedding=embedding,
@@ -284,6 +351,18 @@ class SemanticCache:
                 return embedding, None, None
             response = result.entry.response if result.entry is not None else None
             return embedding, response, result.best_score
+        except asyncio.TimeoutError:
+            elapsed_ms = int((time.perf_counter() - op_start) * 1000)
+            timeout_ms = int(self._config.cache_timeout_seconds * 1000)
+            record_cache_error("lookup")
+            log.warning(
+                "cache.timeout_exceeded",
+                elapsed_ms=elapsed_ms,
+                timeout_ms=timeout_ms,
+                action="bypass",
+                namespace=namespace,
+            )
+            return embedding, None, None
         except Exception as exc:
             record_cache_error("lookup")
             log.error("cache.lookup_failed", error=str(exc), namespace=namespace)
